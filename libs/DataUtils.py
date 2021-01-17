@@ -7,7 +7,7 @@ URLFILE = os.path.join(DATAFILEPATH, ".url_")
 DSMVERSIONFILE = os.path.join(DATAFILEPATH, ".version_")
 
 Animals = ['Dog','Mouse','Cat','Elephant','Cow','Eagle','Snake','Ape','Bull','Peacock','Fly']
-Colors = ['Blue','Pink','Yellow','Green','Red','Orange']
+Colors = ['Blue','Pink','Yellow','Green','Red','Orange','Purple','White','Black']
 
 def CheckAndCreateDataFolderIfNeeded():
     if not os.path.exists(DATAFILEPATH):

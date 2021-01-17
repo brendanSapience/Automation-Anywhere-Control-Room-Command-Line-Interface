@@ -6,110 +6,200 @@ import urllib.parse
 
 sys.path.insert(1, './libs')
 sys.path.insert(1, './responses')
+sys.path.insert(1, './transformers')
 import DataUtils
-import IQBotLIResponses
+import IQBotLITransformers
 import IQBotCommons
+import StdResponses
 
-LI_LIST_URI = "/IQBot/api/projects"
-LI_LIST_REQ_TYPE = "GET"
-
-LI_FILE_LIST_PER_STATUS_REQ_TYPE = "GET"
-# VALIDATION, INVALID, SUCCESS, UNCLASSIFIED, UNTRAINED
-def get_LI_FILE_LIST_PER_STATUS_URI(LIID,STATUS):
+def get_li_file_list_per_status_resources(crversion,sessionname,token,LiId,Status):
     ValidStatuses = ['VALIDATION', 'INVALID', 'SUCCESS', 'UNCLASSIFIED', 'UNTRAINED']
-    if STATUS.upper() not in ValidStatuses:
-        print("Error: Invalid File Status: "+STATUS)
+
+    if (crversion == "A2019.18"):
+        Headers = {
+        'Content-Type': "application/json",
+        'cache-control': "no-cache",
+        'X-Authorization': token
+        }
+
+        if Status.upper() not in ValidStatuses:
+            print("Error: Invalid File Status: "+STATUS)
+            exit(1)
+
+        api_op = "/IQBot/gateway/learning-instances/"+LiId+"/files/list?docStatus="+Status.upper()
+        api_call_type = "GET"
+
+        return True,api_call_type,api_op,Headers,None
+    else:
+        return False,None,None,None,None
+
+def get_li_detail_resources(crversion,sessionname,token,LiId):
+
+    if (crversion == "A2019.18"):
+        Headers = {
+        'Content-Type': "application/json",
+        'cache-control': "no-cache",
+        'x-authorization': token
+        }
+
+        api_op = "/IQBot/api/projects/"+LiId+"/detail-summary"
+        api_call_type = "GET"
+
+        return True,api_call_type,api_op,Headers,None
+    else:
+        return False,None,None,None,None
+
+def get_li_file_list_resources(crversion,sessionname,token,LiId):
+
+    if (crversion == "A2019.18"):
+        Headers = {
+        'Content-Type': "application/json",
+        'cache-control': "no-cache",
+        'X-Authorization': token
+        }
+
+        api_op = "/IQBot/api/projects/"+LiId+"/files"
+        api_call_type = "GET"
+
+        return True,api_call_type,api_op,Headers,None
+    else:
+        return False,None,None,None,None
+
+def get_li_grp_list_resources(crversion,sessionname,token,LiId):
+
+    if (crversion == "A2019.18"):
+        Headers = {
+        'Content-Type': "application/json",
+        'cache-control': "no-cache",
+        'X-Authorization': token
+        }
+
+        api_op = "/IQBot/api/projects/"+LiId+"/categories?offset=0&limit=50&sort=-index&trainingNotRequired=true"
+        api_call_type = "GET"
+
+        return True,api_call_type,api_op,Headers,None
+    else:
+        return False,None,None,None,None
+
+def get_learning_instance_detail(outputFormat,sessionname,LiId):
+
+    url = DataUtils.GetUrl(sessionname)
+    TOKEN = DataUtils.GetAuthToken(sessionname)
+    CRVERSION = DataUtils.GetCRVersion(sessionname)
+
+    IsVersionSupported,CallType,ApiUri,Headers,Body = get_li_detail_resources(CRVERSION,sessionname,TOKEN,LiId)
+
+    if not IsVersionSupported:
+        logging.debug("Unsupported CR Version: {}".format(crversion))
+        print("Unsupported CR Version")
         exit(1)
 
-    return "/IQBot/gateway/learning-instances/"+LIID+"/files/list?docStatus="+STATUS.upper()
+    FULLURL = urllib.parse.urljoin(url,ApiUri)
+    print(FULLURL)
+    print(CallType)
+    print(Headers)
 
-LI_DETAIL_REQ_TYPE = "GET"
-def get_LI_DETAIL_URI(LIID):
-    return "/IQBot/api/projects/"+LIID+"/detail-summary"
+    response = requests.request(method=CallType, url=FULLURL, data=Body, headers=Headers)
 
-LI_FILE_LIST_REQ_TYPE = "GET"
-def get_LI_FILE_LIST_URI(LIID):
-    return "/IQBot/api/projects/"+LIID+"/files"
-
-LI_GROUP_LIST_REQ_TYPE = "GET"
-def get_LI_GROUP_LIST_URI(LIID):
-    #/IQBot/api/projects/4a505399-e0d5-45b4-ac18-ac88a1d9763a/categories?offset=0&limit=50&sort=-index&trainingNotRequired=true
-    return "/IQBot/api/projects/"+LIID+"/categories?offset=0&limit=50&sort=-index"
-
-def get_learning_instance_detail(learningInstanceName = "",learningInstanceID = "",sessionname = "",CsvOutput = False,ProcessOutput = True):
-
-    if(learningInstanceName != ""):
-        learningInstanceID = IQBotCommons.ConvertLINameToLIID(sessionname,learningInstanceName)
-
-    URL = urllib.parse.urljoin(DataUtils.GetUrl(sessionname), get_LI_DETAIL_URI(learningInstanceID))
-
-    headers = {
-        'Content-Type': "application/json",
-        'cache-control': "no-cache",
-        'X-Authorization': DataUtils.GetAuthToken(sessionname)
-    }
-
-    response = requests.request(LI_DETAIL_REQ_TYPE, URL, headers=headers)
-    if(ProcessOutput):
-        isInError = IQBotLIResponses.Process_LI_Detail_Response(response,CsvOutput)
+    isAPICallOK = StdResponses.processAPIResponse(response)
+    if(not isAPICallOK):
+        exit(99)
     else:
-        return response
-
-def list_learning_instance_files(learningInstanceName = "",learningInstanceID = "",status="",sessionname = "",CsvOutput = False,ProcessOutput = True):
-
-    if(learningInstanceName != ""):
-        learningInstanceID = IQBotCommons.ConvertLINameToLIID(sessionname,learningInstanceName)
-
-    if(status == ""):
-        URL = urllib.parse.urljoin(DataUtils.GetUrl(sessionname), get_LI_FILE_LIST_URI(learningInstanceID))
-        #print(URL)
-        headers = {
-            'Content-Type': "application/json",
-            'cache-control': "no-cache",
-            'X-Authorization': DataUtils.GetAuthToken(sessionname)
-        }
-
-        response = requests.request(LI_FILE_LIST_REQ_TYPE, URL, headers=headers)
-        if(ProcessOutput):
-            isInError = IQBotLIResponses.Process_File_List_Response(response,CsvOutput)
+        json_object = json.loads(response.text)
+        if (outputFormat == "DF"):
+            #print(json_object)
+            aDF = IQBotLITransformers.GetListAsCsv(json_object)
+            print(aDF)
+        elif (outputFormat == "CSV"):
+            #print(json_object)
+            aDF = IQBotLITransformers.GetListAsCsv(json_object)
+            print(aDF.to_csv(index=False))
         else:
-            return response
+            #print(json_object)
+            json_formatted_str = json.dumps(json_object, indent=2)
+            print(json_formatted_str)
 
+def list_learning_instance_files(outputFormat,sessionname,LiId, Status):
+
+    url = DataUtils.GetUrl(sessionname)
+    TOKEN = DataUtils.GetAuthToken(sessionname)
+    CRVERSION = DataUtils.GetCRVersion(sessionname)
+
+    if(Status == ""):
+        IsVersionSupported,CallType,ApiUri,Headers,Body = get_li_file_list_resources(CRVERSION,sessionname,TOKEN,LiId)
     else:
+        IsVersionSupported,CallType,ApiUri,Headers,Body = get_li_file_list_per_status_resources(CRVERSION,sessionname,TOKEN,LiId,Status)
 
-        URL = urllib.parse.urljoin(DataUtils.GetUrl(sessionname), get_LI_FILE_LIST_PER_STATUS_URI(learningInstanceID,status))
-        #print(URL)
-        headers = {
-            'Content-Type': "application/json",
-            'cache-control': "no-cache",
-            'X-Authorization': DataUtils.GetAuthToken(sessionname)
-        }
+    if not IsVersionSupported:
+        logging.debug("Unsupported CR Version: {}".format(crversion))
+        print("Unsupported CR Version")
+        exit(1)
 
-        response = requests.request(LI_FILE_LIST_PER_STATUS_REQ_TYPE, URL, headers=headers)
-        if(ProcessOutput):
-            isInError = IQBotLIResponses.Process_LI_Files_With_Status_Response(response,CsvOutput)
+    FULLURL = urllib.parse.urljoin(url,ApiUri)
+
+    response = requests.request(method=CallType, url=FULLURL, data=Body, headers=Headers)
+    #print(response.text)
+    isAPICallOK = StdResponses.processAPIResponse(response)
+    if(not isAPICallOK):
+        exit(99)
+    else:
+        json_object = json.loads(response.text)
+        #print(json_object)
+        if Status == "":
+            aDF = IQBotLITransformers.GetLIFileListAsCsv(json_object)
+            if(outputFormat == "DF"):
+                print(aDF)
+            elif(outputFormat == "CSV"):
+                print(aDF.to_csv(index=False))
+            else:
+                json_formatted_str = json.dumps(json_object, indent=2)
+                print(json_formatted_str)
         else:
-            return response
+
+            aDF = IQBotLITransformers.GetFileListPerStatusAsCsv(json_object)
+            if(outputFormat == "DF"):
+                print(aDF)
+            elif(outputFormat == "CSV"):
+                print(aDF.to_csv(index=False))
+            else:
+                json_formatted_str = json.dumps(json_object, indent=2)
+                print(json_formatted_str)
 
 
-def list_learning_instance_groups(learningInstanceName = "",learningInstanceID = "",sessionname = "",CsvOutput = False,ProcessOutput = True):
+def list_learning_instance_groups(outputFormat,sessionname,LiId):
 
-    if(learningInstanceName != ""):
-        learningInstanceID = IQBotCommons.ConvertLINameToLIID(sessionname,learningInstanceName)
+    url = DataUtils.GetUrl(sessionname)
+    TOKEN = DataUtils.GetAuthToken(sessionname)
+    CRVERSION = DataUtils.GetCRVersion(sessionname)
 
-    URL = urllib.parse.urljoin(DataUtils.GetUrl(sessionname), get_LI_GROUP_LIST_URI(learningInstanceID))
+    IsVersionSupported,CallType,ApiUri,Headers,Body = get_li_grp_list_resources(CRVERSION,sessionname,TOKEN,LiId)
 
-    headers = {
-        'Content-Type': "application/json",
-        'cache-control': "no-cache",
-        'X-Authorization': DataUtils.GetAuthToken(sessionname)
-    }
+    if not IsVersionSupported:
+        logging.debug("Unsupported CR Version: {}".format(crversion))
+        print("Unsupported CR Version")
+        exit(1)
 
-    response = requests.request(LI_GROUP_LIST_REQ_TYPE, URL, headers=headers)
-    if(ProcessOutput):
-        isInError = IQBotLIResponses.Process_Group_List_Response(response,CsvOutput)
+    FULLURL = urllib.parse.urljoin(url,ApiUri)
+    #print(FULLURL)
+    #print(CallType)
+    #print(Headers)
+
+    response = requests.request(method=CallType, url=FULLURL, data=Body, headers=Headers)
+
+    isAPICallOK = StdResponses.processAPIResponse(response)
+    if(not isAPICallOK):
+        exit(99)
     else:
-        return response
-
-def list_learning_instances(sessionname,CsvOutput,ProcessOutput = True):
-    return IQBotCommons.list_learning_instances(sessionname,CsvOutput,ProcessOutput)
+        json_object = json.loads(response.text)
+        if (outputFormat == "DF"):
+            #print(json_object)
+            aDF = IQBotLITransformers.GetLIGroupListAsCsv(json_object)
+            print(aDF)
+        elif (outputFormat == "CSV"):
+            #print(json_object)
+            aDF = IQBotLITransformers.GetLIGroupListAsCsv(json_object)
+            print(aDF.to_csv(index=False))
+        else:
+            #print(json_object)
+            json_formatted_str = json.dumps(json_object, indent=2)
+            print(json_formatted_str)

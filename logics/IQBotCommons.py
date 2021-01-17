@@ -4,16 +4,45 @@ import sys
 import os
 import urllib.parse
 sys.path.insert(1, './responses')
+sys.path.insert(1, './transformers')
 import DataUtils
-import IQBotLIResponses
+import IQBotLITransformers
+import StdResponses
 
-LI_LIST_URI = "/IQBot/api/projects"
-LI_LIST_REQ_TYPE = "GET"
+def get_li_list_resources(crversion,sessionname,token):
 
-LI_LIST_GROUPS_FROM_LI = "GET"
-def get_LI_LIST_GROUPS_FROM_LI_URI(LIID):
-    # /IQBot/api/projects/b069d79d-5df0-43dc-824f-2c44474867ca/categories?offset=0&limit=50&sort=-index&trainingNotRequired=true
-    return "/IQBot/api/projects/"+LIID+"/categories?offset=0&limit=5000&sort=-index&trainingNotRequired=true"
+    if (crversion == "A2019.18"):
+        Headers = {
+        'Content-Type': "application/json",
+        'cache-control': "no-cache",
+        'X-Authorization': token
+        }
+
+
+        api_op = "/IQBot/api/projects"
+        api_call_type = "GET"
+
+        return True,api_call_type,api_op,Headers,None
+    else:
+        return False,None,None,None,None
+
+
+def get_grp_list_from_li_resources(crversion,sessionname,token,LiId):
+
+    if (crversion == "A2019.18"):
+        Headers = {
+        'Content-Type': "application/json",
+        'cache-control': "no-cache",
+        'X-Authorization': token
+        }
+
+        api_op = "/IQBot/api/projects/"+LiId+"/categories?offset=0&limit=5000&sort=-index&trainingNotRequired=true"
+        api_call_type = "GET"
+
+        return True,api_call_type,api_op,Headers,None
+    else:
+        return False,None,None,None,None
+
 
 
 def ConvertLINameToLIID(sessionname,liname):
@@ -39,17 +68,15 @@ def ConvertLINameToLIID(sessionname,liname):
 
 
 
-def GetAllGroupsFromLI(sessionname,liname):
+def GetAllGroupsFromLI(sessionname,liid):
     Mappings = {}
     try:
 
-        liid = ConvertLINameToLIID(sessionname,liname)
-        res = list_groups_from_li(liid,sessionname)
-        #print(res.text)
-        JsonList = json.loads(res.text)
-        #print(res)
+        #liid = ConvertLINameToLIID(sessionname,liname)
+        JsonList = list_groups_from_li_internal(sessionname,liid)
+
         ItemList = JsonList['data']['categories']
-        #print(ItemList)
+
         for item in ItemList:
 
             ID = item['id']
@@ -58,40 +85,102 @@ def GetAllGroupsFromLI(sessionname,liname):
             Mappings[ID] = GRPID
 
         return liid,Mappings
-    except:
-        print("An error occured while converting getting Group List for LI.")
+    except Exception as e:
+        print("An error occured while converting getting Group List for LI:"+str(e))
         exit(1)
 
-def list_groups_from_li(liid,sessionname):
-    # /IQBot/api/projects/b069d79d-5df0-43dc-824f-2c44474867ca/categories?offset=0&limit=50&sort=-index&trainingNotRequired=true
-    URL = urllib.parse.urljoin(DataUtils.GetUrl(sessionname), get_LI_LIST_GROUPS_FROM_LI_URI(liid))
+def list_groups_from_li_internal(sessionname,LiId):
 
-    headers = {
-        'Content-Type': "application/json",
-        'cache-control': "no-cache",
-        'X-Authorization': DataUtils.GetAuthToken(sessionname)
-    }
+    url = DataUtils.GetUrl(sessionname)
+    TOKEN = DataUtils.GetAuthToken(sessionname)
+    CRVERSION = DataUtils.GetCRVersion(sessionname)
 
-    response = requests.request(LI_LIST_GROUPS_FROM_LI, URL, headers=headers)
-    return response
-    #if(ProcessOutput):
-    #    isInError = IQBotGroupResponses.Process_LI_Group_List_Response(response,CsvOutput)
-    #else:
-    #    return response
+    IsVersionSupported,CallType,ApiUri,Headers,Body = get_grp_list_from_li_resources(CRVERSION,sessionname,TOKEN,LiId)
 
-def list_learning_instances(sessionname,CsvOutput,ProcessOutput = True):
-    URL = urllib.parse.urljoin(DataUtils.GetUrl(sessionname), LI_LIST_URI)
+    if not IsVersionSupported:
+        logging.debug("Unsupported CR Version: {}".format(crversion))
+        print("Unsupported CR Version")
+        exit(1)
 
-    headers = {
-        'Content-Type': "application/json",
-        'cache-control': "no-cache",
-        'X-Authorization': DataUtils.GetAuthToken(sessionname)
-    }
+    FULLURL = urllib.parse.urljoin(url,ApiUri)
 
-    response = requests.request(LI_LIST_REQ_TYPE, URL, headers=headers)
+    response = requests.request(method=CallType, url=FULLURL, data=Body, headers=Headers)
 
-    if(ProcessOutput):
-        isInError = IQBotLIResponses.Process_List_Response(response,CsvOutput)
-
+    isAPICallOK = StdResponses.processAPIResponse(response)
+    if(not isAPICallOK):
+        exit(99)
     else:
-        return response
+        json_object = json.loads(response.text)
+        return json_object
+
+def list_groups_from_li(outputFormat,sessionname,LiId):
+
+    url = DataUtils.GetUrl(sessionname)
+    TOKEN = DataUtils.GetAuthToken(sessionname)
+    CRVERSION = DataUtils.GetCRVersion(sessionname)
+
+    IsVersionSupported,CallType,ApiUri,Headers,Body = get_grp_list_from_li_resources(CRVERSION,sessionname,TOKEN,LiId)
+
+    if not IsVersionSupported:
+        logging.debug("Unsupported CR Version: {}".format(crversion))
+        print("Unsupported CR Version")
+        exit(1)
+
+    FULLURL = urllib.parse.urljoin(url,ApiUri)
+
+    response = requests.request(method=CallType, url=FULLURL, data=Body, headers=Headers)
+
+    isAPICallOK = StdResponses.processAPIResponse(response)
+    if(not isAPICallOK):
+        exit(99)
+    else:
+        json_object = json.loads(response.text)
+        if (outputFormat == "DF"):
+            #print(json_object)
+            aDF = IQBotLITransformers.GetListAsCsv(json_object)
+            print(aDF)
+        elif (outputFormat == "CSV"):
+            #print(json_object)
+            aDF = IQBotLITransformers.GetListAsCsv(json_object)
+            print(aDF.to_csv(index=False))
+        else:
+            #print(json_object)
+            json_formatted_str = json.dumps(json_object, indent=2)
+            print(json_formatted_str)
+
+    #isInError = RolesResponses.Process_list_Response(response,CsvOutput)
+
+def list_learning_instances(outputFormat,sessionname):
+
+    url = DataUtils.GetUrl(sessionname)
+    TOKEN = DataUtils.GetAuthToken(sessionname)
+    CRVERSION = DataUtils.GetCRVersion(sessionname)
+
+    IsVersionSupported,CallType,ApiUri,Headers,Body = get_li_list_resources(CRVERSION,sessionname,TOKEN)
+
+    if not IsVersionSupported:
+        logging.debug("Unsupported CR Version: {}".format(crversion))
+        print("Unsupported CR Version")
+        exit(1)
+
+    FULLURL = urllib.parse.urljoin(url,ApiUri)
+
+    response = requests.request(method=CallType, url=FULLURL, data=Body, headers=Headers)
+
+    isAPICallOK = StdResponses.processAPIResponse(response)
+    if(not isAPICallOK):
+        exit(99)
+    else:
+        json_object = json.loads(response.text)
+        if (outputFormat == "DF"):
+            #print(json_object)
+            aDF = IQBotLITransformers.GetLIListAsCsv(json_object)
+            print(aDF)
+        elif (outputFormat == "CSV"):
+            #print(json_object)
+            aDF = IQBotLITransformers.GetLIListAsCsv(json_object)
+            print(aDF.to_csv(index=False))
+        else:
+            #print(json_object)
+            json_formatted_str = json.dumps(json_object, indent=2)
+            print(json_formatted_str)

@@ -1,4 +1,4 @@
-# Command Line Interface for Automation Anywhere Control Room
+# Command Line Interface for Automation Anywhere Control Room & IQ Bot
 A simple command line interface for Automation Anywhere's platform
 
 ## How to use it
@@ -15,6 +15,7 @@ python ./crcli.py login -u myUser -p "myPassword" -r "http://MyControlRoom.com" 
 
 ```
 python ./crcli.py -h
+python ./iqcli.py -h
 ```
 
 4. Check CLI Help to look at available subcommands for a given command:
@@ -47,29 +48,67 @@ The output format can be set to CSV, DF (DataFrame) or JSON (Default) by using t
 
 ## Commands & Subcommands Currently Available:
 
-* auth
-  * login: authenticate to CR
-  * logout: logout of CR
-  * list: list existing Sessions
-* device
-  * list
-* role
-  * list
-* activity
-  * list
-* user
-  * list
-  * create: create a CR user
-  * delete
-  * setlogin: change the default credentials of a user
-  * bot
+* Control Room Commands (crcli):
+  * auth
+    * login: authenticate to CR
+    * logout: logout of CR
+    * list: list existing Sessions
+  * device
     * list
-    * show: show bot definition as JSON
-    * update: update bot definition (from JSON file)
+  * role
+    * list
+  * activity
+    * list
+  * user
+    * list
+    * create: create a CR user
+    * delete
+    * setlogin: change the default credentials of a user
+    * bot
+      * list
+      * show: show bot definition as JSON
+      * update: update bot definition (from JSON file)
+
+* IQ Bot Commands (iqcli):
+  * li (learning Instance)
+    * list
+    * show
+    * list_files
+    * list_groups
+  * group
+    * list
+    * update (activate or deactivate)
+
 ## Examples
 ```
 # Authenticate
 ./crcli.py auth login -u myUser -p "myPassword" -r "http://192.168.1.100"
+```
+
+```
+# List all Learning Instances (and display as DataFrame)
+python ./iqcli.py -s RedDog -f DF li list
+```
+
+```
+# List files under a Learning Instance with ID 0e832b48-f016-4401-8c6b-0f56fa0afa00 (and display list as CSV)
+python ./iqcli.py -s RedDog -f CSV li list_files -i 0e832b48-f016-4401-8c6b-0f56fa0afa00
+```
+
+```
+# List files in Validation under a Learning Instance with ID de0c78da-7700-4fe8-b05e-4de8982a9cd1 (and display list as JSON)
+python ./iqcli.py -s RedDog li list_files -i de0c78da-7700-4fe8-b05e-4de8982a9cd1 -t VALIDATION
+```
+
+
+```
+# List groups in Learning Instance with ID de0c78da-7700-4fe8-b05e-4de8982a9cd1 (and display as DataFrame)
+python ./iqcli.py -s RedDog -f DF li list_groups -i de0c78da-7700-4fe8-b05e-4de8982a9cd1
+```
+
+```
+# Turn On all Groups in Learning Instance with ID 5e098ba6-9e74-4457-bd49-65853f713da7 (and display result as DataFrame)
+./iqcli.py -s RedDog -f DF group update -i 5e098ba6-9e74-4457-bd49-65853f713da7 -g ALL -s ON
 ```
 
 ## TO DO

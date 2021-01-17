@@ -1,7 +1,9 @@
 import json
 import pandas as pd
 
-def GetLIDetailAsCsv(jsonResults):
+def GetListAsCsv(jsonResults):
+
+    AllRows = []
 
     out_df = pd.DataFrame(columns=['stagingTotalGroups','stagingTotalBots','stagingDocumentsUnclassified',
     'stagingSuccessFiles','stagingFailedFiles','stagingAccuracy','stagingTestedFiles',
@@ -50,14 +52,15 @@ def GetLIDetailAsCsv(jsonResults):
             'productionAccuracy':b7,'productionProcessedFiles':b8,'productionTotalFiles':b9,'productionPageCount':c1,
             'productionSTP':c2,'pendingForReview':c3,'stagingTestedFilesPercentage':c4,'productionProcessedFilesPercentage':c5,
     }
-    out_df = out_df.append(new_row, ignore_index=True)
+    AllRows.append(new_row)
 
-    return out_df.to_csv(index=False)
-
+    FinalDF = pd.DataFrame(AllRows)
+    return FinalDF
 
 
 def GetLIGroupListAsCsv(jsonResults):
 
+    AllRows = []
     out_df = pd.DataFrame(columns=['id','name','fileCount',
     'productionTotalCount','productionSTPCount','productionUnprocessedCount','productionPageCount',
     'stagingTotalCount','stagingSTPCount','stagingUnprocessedCount','stagingPageCount',
@@ -84,21 +87,30 @@ def GetLIGroupListAsCsv(jsonResults):
             'productionTotalCount':a4,'productionSTPCount':a5,'productionUnprocessedCount':a6,'productionPageCount':a7,
             'stagingTotalCount':a8,'stagingSTPCount':a9,'stagingUnprocessedCount':b1,'stagingPageCount':b2
         }
-        out_df = out_df.append(new_row, ignore_index=True)
+        AllRows.append(new_row)
 
-    return out_df.to_csv(index=False)
+    FinalDF = pd.DataFrame(AllRows)
+    return FinalDF
 
 def GetFileListPerStatusAsCsv(jsonResults):
-    out = ''
-    for item in jsonResults:
-        if item:
-            if out == '':
-                out = item
-            else:
-                out = out + ',' + item
-    return out
-    
+
+    AllRows = []
+
+    out_df = pd.DataFrame(columns=['file'])
+
+    ItemList = jsonResults
+    for item in ItemList:
+        new_row = {
+            'file':item
+        }
+        AllRows.append(new_row)
+
+    FinalDF = pd.DataFrame(AllRows)
+    return FinalDF
+
 def GetLIFileListAsCsv(jsonResults):
+
+    AllRows = []
 
     out_df = pd.DataFrame(columns=['fileId','projectId','fileName','fileLocation','fileSize','fileHeight','fileWidth',
         'format','processed','classificationId','uploadrequestId','layoutId','isProduction'])
@@ -123,20 +135,15 @@ def GetLIFileListAsCsv(jsonResults):
             'fileId':a1,'projectId':a2,'fileName':a3,'fileLocation':a4,'fileSize':a5,'fileHeight':a6,'fileWidth':a7,
             'format':a8,'processed':a9,'classificationId':b1,'uploadrequestId':b2,'layoutId':b3,'isProduction':b4
         }
-        out_df = out_df.append(new_row, ignore_index=True)
+        AllRows.append(new_row)
 
-    return out_df.to_csv(index=False)
+        FinalDF = pd.DataFrame(AllRows)
+        return FinalDF
 
 
 def GetLIListAsCsv(jsonResults):
 
-            #"ocrEngineDetails": [
-            #    {
-            #        "id": "3",
-            #        "name": null,
-            #        "engineType": "Abbyy"
-            #    }
-            #],
+    AllRows = []
 
     out_df = pd.DataFrame(columns=['id','name','description','organizationId','projectTypeId','projectType','confidenceThreshold',
         'numberOfFiles','numberOfCategories','unprocessedFileCount','primaryLanguage','accuracyPercentage','visionBotCount',
@@ -147,34 +154,103 @@ def GetLIListAsCsv(jsonResults):
     for item in ItemList:
         a1 = item['id']
         a2 = item['name']
-        a3 = item['description']
-        a4 = item['organizationId']
-        a5 = item['projectTypeId']
+        #a3 = item['description']
+        #a4 = item['organizationId']
+        #a5 = item['projectTypeId']
         a6 = item['projectType']
-        a7 = item['confidenceThreshold']
+        #a7 = item['confidenceThreshold']
         a8 = item['numberOfFiles']
         a9 = item['numberOfCategories']
         b1 = item['unprocessedFileCount']
         b2 = item['primaryLanguage']
         b3 = item['accuracyPercentage']
         b4 = item['visionBotCount']
-        b5 = item['currentTrainedPercentage']
+        #b5 = item['currentTrainedPercentage']
         b6 = item['totalStagingPageCount']
         b7 = item['totalProductionPageCount']
         b8 = item['projectState']
-        b9 = item['environment']
-        c1 = item['updatedAt']
-        c2 = item['createdAt']
-        c3 = item['ocrEngineDetails'][0]['id']
+        #b9 = item['environment']
+        #c1 = item['updatedAt']
+        #c2 = item['createdAt']
+        #c3 = item['ocrEngineDetails'][0]['id']
         c4 = item['ocrEngineDetails'][0]['engineType']
 
-
         new_row = {
-            'id':a1,'name':a2,'description':a3,'organizationId':a4,'projectTypeId':a5,'projectType':a6,'confidenceThreshold':a7,
-            'numberOfFiles':a8,'numberOfCategories':a9,'unprocessedFileCount':b1,'primaryLanguage':b2,'accuracyPercentage':b3,'visionBotCount':b4,
-            'currentTrainedPercentage':b5,'totalStagingPageCount':b6,'totalProductionPageCount':b7,'projectState':b8,'environment':b9,'updatedAt':c1,
-            'createdAt':c2,'ocrEngineID':c3,'ocrEngineType':c4
+            'id':a1,'name':a2,'projectType':a6,'numberOfFiles':a8,'numberOfCategories':a9,'unprocessedFileCount':b1,'primaryLanguage':b2,'accuracyPercentage':b3,'visionBotCount':b4,
+            'totalStagingPageCount':b6,'totalProductionPageCount':b7,'projectState':b8,'ocrEngineType':c4
         }
-        out_df = out_df.append(new_row, ignore_index=True)
 
-    return out_df.to_csv(index=False)
+        #new_row = {
+        #    'id':a1,'name':a2,'description':a3,'organizationId':a4,'projectTypeId':a5,'projectType':a6,'confidenceThreshold':a7,
+        #    'numberOfFiles':a8,'numberOfCategories':a9,'unprocessedFileCount':b1,'primaryLanguage':b2,'accuracyPercentage':b3,'visionBotCount':b4,
+        #    'currentTrainedPercentage':b5,'totalStagingPageCount':b6,'totalProductionPageCount':b7,'projectState':b8,'environment':b9,'updatedAt':c1,
+        #    'createdAt':c2,'ocrEngineID':c3,'ocrEngineType':c4
+        #}
+        AllRows.append(new_row)
+
+        myDFAdditional = pd.DataFrame(AllRows)
+
+    FinalDF = pd.DataFrame(AllRows)
+    return FinalDF
+
+def GetLIDetailAsCsv(jsonResults):
+
+    AllRows = []
+
+    out_df = pd.DataFrame(columns=['','','',''])
+
+    item = jsonResults['data']
+    a1 = item['stagingTotalGroups']
+    a2 = item['stagingTotalBots']
+    a3 = item['stagingDocumentsUnclassified']
+    a4 = item['stagingSuccessFiles']
+    a5 = item['stagingFailedFiles']
+    a6 = item['stagingAccuracy']
+    a7 = item['stagingTestedFiles']
+    a8 = item['stagingTotalFiles']
+    a9 = item['stagingPageCount']
+    b1 = item['stagingSTP']
+    b2 = item['productionTotalGroups']
+    b3 = item['productionTotalBots']
+    b4 = item['productionDocumentsUnclassified']
+    b5 = item['productionSuccessFiles']
+    b6 = item['productionReviewFiles']
+    b7 = item['productionAccuracy']
+    b8 = item['productionProcessedFiles']
+    b9 = item['productionTotalFiles']
+    c1 = item['productionPageCount']
+    c2 = item['productionSTP']
+    c3 = item['pendingForReview']
+    c4 = item['stagingTestedFilesPercentage']
+    c5 = item['productionProcessedFilesPercentage']
+
+    new_row = {
+            'stagingTotalGroups': a1,
+            'stagingTotalBots': a2,
+            'stagingDocumentsUnclassified': a3,
+            'stagingSuccessFiles': a4,
+            'stagingFailedFiles': a5,
+            'stagingAccuracy': a6,
+            'stagingTestedFiles': a7,
+            'stagingTotalFiles': a8,
+            'stagingPageCount': a9,
+            'stagingSTP': b1,
+            'productionTotalGroups': b2,
+            'productionTotalBots': b3,
+            'productionDocumentsUnclassified': b4,
+            'productionSuccessFiles': b5,
+            'productionReviewFiles': b6,
+            'productionAccuracy': b7,
+            'productionProcessedFiles': b8,
+            'productionTotalFiles': b9,
+            'productionPageCount': c1,
+            'productionSTP': c2,
+            'pendingForReview': c3,
+            'stagingTestedFilesPercentage': c4,
+            'productionProcessedFilesPercentage': c5
+    }
+
+    AllRows.append(new_row)
+
+    FinalDF = pd.DataFrame(AllRows)
+    return FinalDF
