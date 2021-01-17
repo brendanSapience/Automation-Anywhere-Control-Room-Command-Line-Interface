@@ -111,6 +111,25 @@ python ./iqcli.py -s RedDog -f DF li list_groups -i de0c78da-7700-4fe8-b05e-4de8
 ./iqcli.py -s RedDog -f DF group update -i 5e098ba6-9e74-4457-bd49-65853f713da7 -g ALL -s ON
 ```
 
+```
+# Update the content of a Bot
+# Step 1: list existing bots to get Bot ID
+python ./crcli.py -s PurpleEagle -f DF bot list -l "Api"
+
+  desc    id               name parentId                                               path                          type
+0        661           API Bots       10                  Automation Anywhere\Bots\API Bots  application/vnd.aa.directory
+1        662  API_Triggered_Bot      661  Automation Anywhere\Bots\API Bots\API_Triggere...    application/vnd.aa.taskbot
+2       1031           MyApiBot      661         Automation Anywhere\Bots\API Bots\MyApiBot    application/vnd.aa.taskbot
+
+# Step 2: Get Bt definition as JSON
+python ./crcli.py -s PurpleEagle bot show -i 1031 > Bot1031.json
+
+# Step 3: Modify the JSON file as needed
+
+# Step 4: Update the Bot with the new JSON Definition
+python ./crcli.py -s PurpleEagle bot update -i 1031 -d ./Bot1031.json 
+```
+
 ## TO DO
 
 add more stuff, feel free to request!
