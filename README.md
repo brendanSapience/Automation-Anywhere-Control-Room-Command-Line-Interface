@@ -64,10 +64,15 @@ The output format can be set to CSV, DF (DataFrame) or JSON (Default) by using t
     * create: create a CR user
     * delete
     * setlogin: change the default credentials of a user
-    * bot
-      * list
-      * show: show bot definition as JSON
-      * update: update bot definition (from JSON file)
+
+  * bot
+    * list
+    * show: show bot definition as JSON
+    * update: update bot definition (from JSON file)
+
+  * wlm
+    * list
+    * show
 
 * IQ Bot Commands (iqcli):
   * li (learning Instance)
@@ -127,7 +132,7 @@ python ./crcli.py -s PurpleEagle bot show -i 1031 > Bot1031.json
 # Step 3: Modify the JSON file as needed
 
 # Step 4: Update the Bot with the new JSON Definition
-python ./crcli.py -s PurpleEagle bot update -i 1031 -d ./Bot1031.json 
+python ./crcli.py -s PurpleEagle bot update -i 1031 -d ./Bot1031.json
 ```
 
 ## TO DO
