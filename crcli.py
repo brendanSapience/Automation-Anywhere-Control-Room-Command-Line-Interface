@@ -18,6 +18,7 @@ import DevicesLogics
 import UsersLogics
 import RolesLogics
 import ObjectsLogics
+import WLMLogics
 import ActivitiesLogics
 import DataUtils
 
@@ -69,6 +70,7 @@ auth_subparsers = auth_parser.add_subparsers()
 # auth login
 login_parser = auth_subparsers.add_parser('login')
 login_parser.add_argument('-u','--user',type=str,default="", help='CR Login', dest="LOGIN")
+login_parser.add_argument('-s','--session',type=str,default="", help='Session Name',dest="SESSIONNAME")
 login_parser.add_argument('-p', '--pwd',type=str,default="", help='CR Password', dest="PWD")
 login_parser.add_argument('-r', '--url',type=str,default="", help='CR URL',dest="URL")
 login_parser.add_argument('-v', '--version',type=str,default=DEFAULT_CR_VERSION, help='CR Version',dest="CRVERSION")
@@ -162,6 +164,8 @@ user_list_parser.set_defaults(func=user_list)
 
 # user create
 def user_create(args):
+    if not args.SESSIONNAME:
+        parser.error('no session name passed')
     if not args.USERNAME:
         parser.error('You need to pass parameter -u (--username)')
     if not args.PASSWORD:
@@ -169,25 +173,24 @@ def user_create(args):
     if not args.EMAIL:
         parser.error('You need to pass parameter -e (--email)')
 
-    UsersLogics.create(args.sessionname,args.USERNAME,args.PASSWORD,args.EMAIL,args.ROLES,args.DESC,args.FIRSTNAME,args.LASTNAME)
+    UsersLogics.create(args.OUTPUTFORMAT,args.SESSIONNAME,args.USERNAME,args.PASSWORD,args.EMAIL,args.ROLES,args.DESC,args.FIRSTNAME,args.LASTNAME)
 
 user_create_parser = user_subparsers.add_parser('create')
 user_create_parser.set_defaults(func=user_create)
-user_create_parser.add_argument("-u","--username", type=str, help = "<create & setlogin & delete>: Username (ex: \"linus\") or list of Usernames (ex: \"linus,carly,yli\")", dest = "USERNAME")
-user_create_parser.add_argument("-p","--password", type=str, help = "<create>: Password", dest = "PASSWORD")
-user_create_parser.add_argument("-d","--description", type=str, help = "<create>: Description", dest = "DESC")
-user_create_parser.add_argument("-f","--firstname", type=str, help = "<create>: First Name", dest = "FIRSTNAME")
-user_create_parser.add_argument("-l","--lastname", type=str, help = "<create>: Last Name", dest = "LASTNAME")
-user_create_parser.add_argument("-e","--email", type=str,default = "aa@aa.com", help = "<create>: User Email", dest = "EMAIL")
-user_create_parser.add_argument("-r","--roles", type=str,default = "", help = "<create>: list of role IDs to assign (ex: \"1,3,4\")", dest = "ROLES")
-user_create_parser.add_argument("-s","--session",type=str,default="", help = "<all> Session Name", dest = "sessionname")
+user_create_parser.add_argument("-u","--username", type=str, help = "Username (ex: \"linus\") or list of Usernames (ex: \"linus,carly,yli\")", dest = "USERNAME")
+user_create_parser.add_argument("-p","--password", type=str, help = "Password", dest = "PASSWORD")
+user_create_parser.add_argument("-d","--description", type=str, help = "Description", dest = "DESC")
+user_create_parser.add_argument("-f","--firstname", type=str, help = "First Name", dest = "FIRSTNAME")
+user_create_parser.add_argument("-l","--lastname", type=str, help = "Last Name", dest = "LASTNAME")
+user_create_parser.add_argument("-e","--email", type=str,default = "aa@aa.com", help = "User Email", dest = "EMAIL")
+user_create_parser.add_argument("-r","--roles", type=str,default = "", help = "list of role IDs to assign (ex: \"1,3,4\")", dest = "ROLES")
 
 # user delete
 def user_delete(args):
     if not args.USERNAME:
         parser.error('You need to pass parameter -u (--username)')
 
-    UsersLogics.delete(args.sessionname,args.USERNAME,args.PASSWORD,args.EMAIL,args.ROLES,args.DESC,args.FIRSTNAME,args.LASTNAME)
+    UsersLogics.delete(args.OUTPUTFORMAT,args.SESSIONNAME,args.USERNAME)
 
 user_delete_parser = user_subparsers.add_parser('delete')
 user_delete_parser.set_defaults(func=user_delete)
@@ -197,12 +200,12 @@ user_delete_parser.add_argument("-u","--username", type=str, help = "<create & s
 def user_setlogin(args):
     if not args.USERNAME:
         parser.error('You need to pass parameter -u (--username)')
-    if not OPTIONS.LOGINUSER:
+    if not args.LOGINUSER:
         parser.error('You need to pass parameter -n (--loginusername)')
-    if not OPTIONS.LOGINPWD:
+    if not args.LOGINPWD:
         parser.error('You need to pass parameter -w (--loginpassword)')
 
-    UsersLogics.setlogin(args.sessionname,args.USERNAME,args.LOGINUSER,args.LOGINPWD)
+    UsersLogics.setlogin(args.OUTPUTFORMAT,args.SESSIONNAME,args.USERNAME,args.LOGINUSER,args.LOGINPWD)
 
 user_setlogin_parser = user_subparsers.add_parser('setlogin')
 user_setlogin_parser.set_defaults(func=user_setlogin)
@@ -257,6 +260,37 @@ bot_update_parser = bot_subparsers.add_parser('update')
 bot_update_parser.set_defaults(func=bot_update)
 bot_update_parser.add_argument("-i","--id",default = "", help = "Object ID (show & update)", dest = "ObjID")
 bot_update_parser.add_argument("-d","--def",default = "", help = "Updated Object Definition (as JSON file)", dest = "UpdatedObjectDef")
+
+#####
+# WLM Parser
+# wlm <list>
+#####
+
+# WLM commands
+wlm_parser = subparsers.add_parser('wlm')
+wlm_subparsers = wlm_parser.add_subparsers()
+
+# queue list
+def wlm_queue_list(args):
+    if not args.SESSIONNAME:
+        parser.error('no session name passed')
+    WLMLogics.wlm_queue_list(args.OUTPUTFORMAT,args.SESSIONNAME)
+
+queue_list_parser = wlm_subparsers.add_parser('list')
+queue_list_parser.set_defaults(func=wlm_queue_list)
+#bot_list_parser.add_argument("-l","--name",default = "", help = "Name filter", dest = "ObjNameFilter")
+
+# queue list
+def wlm_queue_show(args):
+    if not args.SESSIONNAME:
+        parser.error('no session name passed')
+    if not args.QueueID:
+        parser.error('no queue ID passed')
+    WLMLogics.wlm_queue_show(args.OUTPUTFORMAT,args.SESSIONNAME,args.QueueID)
+
+queue_show_parser = wlm_subparsers.add_parser('show')
+queue_show_parser.set_defaults(func=wlm_queue_show)
+queue_show_parser.add_argument("-i","--id",default = "", help = "Queue ID", dest = "QueueID")
 
 if __name__ == '__main__':
     args = parser.parse_args()

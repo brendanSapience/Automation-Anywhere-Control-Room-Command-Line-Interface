@@ -3,6 +3,7 @@ import json
 import sys
 import os
 import urllib.parse
+import pandas as pd
 
 sys.path.insert(1, './libs')
 sys.path.insert(1, './transformers')
@@ -10,16 +11,34 @@ sys.path.insert(1, './responses')
 import DataUtils
 import UsersTransformers
 import StdResponses
+import StdAPIUtils
 
-def get_user_setlogin_resources(crversion,sessionname,token):
+def get_user_delete_resources(crversion,sessionname,token,JsonData):
+    Headers = StdAPIUtils.get_api_call_headers(crversion,token)
+    UserId = JsonData['userId']
 
     if (crversion == "A2019.18"):
-        Headers = {
-        'Content-Type': "application/json",
-        'cache-control': "no-cache",
-        'X-Authorization': token
-        }
 
+        api_op = "/v1/usermanagement/users/"+UserId
+        api_call_type = "DELETE"
+
+        return True,api_call_type,api_op,Headers,None
+    else:
+        return False,None,None,None,None
+def ConvertUsernameToList(username):
+    if("," in username):
+        return username.split(",")
+    else:
+        return [username]
+
+def get_user_setlogin_resources(crversion,sessionname,token,JsonData):
+    Headers = StdAPIUtils.get_api_call_headers(crversion,token)
+
+    username = JsonData['username']
+    loginuser = JsonData['loginuser']
+    loginpassword = JsonData['loginpassword']
+
+    if (crversion == "A2019.18"):
 
         api_op = "/v2/credentialvault/loginsetting"
         api_call_type = "PUT"
@@ -36,15 +55,11 @@ def get_user_setlogin_resources(crversion,sessionname,token):
     else:
         return False,None,None,None,None
 
-def get_user_list_resources(crversion,sessionname,token):
+def get_user_list_resources(crversion,sessionname,token,JsonData):
+
+    Headers = StdAPIUtils.get_api_call_headers(crversion,token)
 
     if (crversion == "A2019.18"):
-        Headers = {
-        'Content-Type': "application/json",
-        'cache-control': "no-cache",
-        'X-Authorization': token
-        }
-
 
         api_op = "/v1/usermanagement/users/list"
         api_call_type = "POST"
@@ -70,15 +85,18 @@ def get_user_list_resources(crversion,sessionname,token):
     else:
         return False,None,None,None,None
 
-def get_user_create_resources(crversion,sessionname,token):
+def get_user_create_resources(crversion,sessionname,token,JsonData):
+
+    Headers = StdAPIUtils.get_api_call_headers(crversion,token)
+    username = JsonData['username']
+    password = JsonData['password']
+    email = JsonData['email']
+    description = JsonData['desc']
+    firstname = JsonData['firstname']
+    lastname = JsonData['lastname']
+    roles = GET_ID_AS_JSON(JsonData['roles'])
 
     if (crversion == "A2019.18"):
-        Headers = {
-        'Content-Type': "application/json",
-        'cache-control': "no-cache",
-        'X-Authorization': token
-        }
-
 
         api_op = "/v1/usermanagement/users"
         api_call_type = "POST"
@@ -86,7 +104,7 @@ def get_user_create_resources(crversion,sessionname,token):
         Body = b = json.dumps(
 
         {
-            "roles":GET_ID_AS_JSON(roles),
+            "roles":roles,
             "email":email,
             "enableAutoLogin":True,
             "username":username,
@@ -100,25 +118,43 @@ def get_user_create_resources(crversion,sessionname,token):
         }
         )
 
+        #["RUNTIME", "DISCOVERYBOTANALYZER", "DISCOVERYBOTRECORDER", "AARIUSER", "ANALYTICSCLIENT"]
+        altLicFeatures = [
+        "DEVELOPMENT", #'ATTENDEDRUNTIME' (attended), 'RUNTIME' (unattended), 'DEVELOPMENT' (bot creator)
+        "DISCOVERYBOTANALYZER",
+        "DISCOVERYBOTRECORDER",
+        "AARIUSER",
+        "ANALYTICSCLIENT"
+        ]
+
+
         return True,api_call_type,api_op,Headers,Body
     else:
         return False,None,None,None,None
 
-USER_DELETE_URI = "/v1/usermanagement/users"
-USER_DELETE_REQ_TYPE = "DELETE"
 
+def get_user_delete_resources(crversion,sessionname,token,JsonData):
+    Headers = StdAPIUtils.get_api_call_headers(crversion,token)
+    UserId = JsonData['userId']
+    if (crversion == "A2019.18"):
+
+        api_op = "/v1/usermanagement/users/"+UserId
+        api_call_type = "DELETE"
+
+        return True,api_call_type,api_op,Headers,None
+    else:
+        return False,None,None,None,None
 def ConvertUsernameToList(username):
     if("," in username):
         return username.split(",")
     else:
         return [username]
 
-def ConvertUsernameToListOfIDs(username,sessionname):
-    ListOfUsernames = username.split(",")
+def ConvertUsernameToListOfIDs(outputFormat,username,sessionname):
+    ListOfUsernames = username.lower().split(",")
     Mappings = {}
     try:
-        res = list(sessionname,False,False)
-        JsonListOfUsers = json.loads(res.text)
+        JsonListOfUsers = StdAPIUtils.generic_api_call_handler_no_post(outputFormat,sessionname,get_user_list_resources,{})
 
         UserList = JsonListOfUsers['list']
         for item in UserList:
@@ -128,8 +164,8 @@ def ConvertUsernameToListOfIDs(username,sessionname):
                 Mappings[USERNAME] = ID
         #print(Mappings)
         return Mappings
-    except:
-        print("An error occured while retrieving the list of existing users.")
+    except Exception as e:
+        print("An error occured while retrieving the list of existing users:"+str(e))
         exit(1)
 
 def GET_ID_AS_JSON(roles):
@@ -145,91 +181,97 @@ def GET_ID_AS_JSON(roles):
         exit(1)
 
 def user_list(outputFormat,sessionname):
+    StdAPIUtils.generic_api_call_handler(outputFormat,sessionname,get_user_list_resources,{},UsersTransformers.GetUserListAsCsv)
 
-    url = DataUtils.GetUrl(sessionname)
-    TOKEN = DataUtils.GetAuthToken(sessionname)
-    CRVERSION = DataUtils.GetCRVersion(sessionname)
-
-    IsVersionSupported,CallType,ApiUri,Headers,Body = get_user_list_resources(CRVERSION,sessionname,TOKEN)
-
-    if not IsVersionSupported:
-        logging.debug("Unsupported CR Version: {}".format(crversion))
-        print("Unsupported CR Version")
-        exit(1)
-
-    FULLURL = urllib.parse.urljoin(url,ApiUri)
-
-    response = requests.request(method=CallType, url=FULLURL, data=Body, headers=Headers)
-
-    isAPICallOK = StdResponses.processAPIResponse(response)
-    if(not isAPICallOK):
-        exit(99)
-    else:
-        json_object = json.loads(response.text)
-        if (outputFormat == "DF"):
-            #print(json_object)
-            aDF = UsersTransformers.GetUserListAsCsv(json_object)
-            print(aDF)
-        elif (outputFormat == "CSV"):
-            #print(json_object)
-            aDF = UsersTransformers.GetUserListAsCsv(json_object)
-            print(aDF.to_csv(index=False))
-        else:
-            #print(json_object)
-            json_formatted_str = json.dumps(json_object, indent=2)
-            print(json_formatted_str)
-
-    #isInError = RolesResponses.Process_list_Response(response,CsvOutput)
-
-def create(sessionname,username,password,email,roles,description,firstname,lastname):
+#args.OUTPUTFORMAT,args.sessionname,args.USERNAME,args.PASSWORD,args.EMAIL,args.ROLES,args.DESC,args.FIRSTNAME,args.LASTNAME
+def create(outputFormat,sessionname,username,password,email,roles,description,firstname,lastname):
 
     AllUsernames = ConvertUsernameToList(username)
+
+    AllRows = []
 
     for aUser in  AllUsernames:
-
-        URL = urllib.parse.urljoin(DataUtils.GetUrl(sessionname), USER_CREATE_URI)
-
-        payload = GET_USER_CREATE_BODY(aUser,password,email,roles,description,firstname,lastname)
-        headers = {
-            'Content-Type': "application/json",
-            'cache-control': "no-cache",
-            'X-Authorization': DataUtils.GetAuthToken(sessionname)
+        JsonData = {
+        "username":username,
+        "password":password,
+        "email":email,
+        "roles":roles,
+        "desc":description,
+        "firstname":firstname,
+        "lastname":lastname
         }
+        json_object = StdAPIUtils.generic_api_call_handler_no_post(outputFormat,sessionname,get_user_create_resources,JsonData)
 
-        response = requests.request(USER_CREATE_REQ_TYPE, URL, data=payload, headers=headers)
-        isInError = UsersResponses.Process_Create_Response(response)
+        Success = False
 
+        if('id' in json_object):
+            Success = True
+            aRow = {'id':json_object['id'],'username':json_object['username'],'success':Success}
+        else:
+            aRow = {'id':"",'username':"",'success':Success}
 
+        AllRows.append(aRow)
 
-def delete(sessionname,username):
+    FinalDF = pd.DataFrame(AllRows)
+    if (outputFormat == "DF"):
+        print(FinalDF)
+    elif (outputFormat == "CSV"):
+        print(FinalDF.to_csv(index=False))
+    else:
+        print(FinalDF.to_json())
+
+def delete(outputFormat,sessionname,username):
     # delete API endpoint only takes the user id and not the user Name
     # all usernames passed need to be first converted to a list of user ids
-    AllUsernames = ConvertUsernameToListOfIDs(username,sessionname)
+    AllRows = []
+
+    AllUsernames = ConvertUsernameToListOfIDs(outputFormat,username,sessionname)
 
     for username,userid in  AllUsernames.items():
-        URL = urllib.parse.urljoin(DataUtils.GetUrl(sessionname), USERUSER_DELETE_URI,str(userid))
-        USER_LIST_URI
-        headers = {
-            'Content-Type': "application/json",
-            'cache-control': "no-cache",
-            'X-Authorization': DataUtils.GetAuthToken(sessionname)
-        }
+        JsonData = {"userId":str(userid)}
+        json_object = StdAPIUtils.generic_api_call_handler_no_post(outputFormat,sessionname,get_user_delete_resources,JsonData)
 
-        response = requests.request(USER_DELETE_REQ_TYPE, URL, headers=headers)
-        isInError = UsersResponses.Process_Delete_Response(response)
+        Success = False
 
-def setlogin(sessionname,username,loginuser,loginpassword):
+        if('id' in json_object):
+            Success = True
+            aRow = {'id':json_object['id'],'username':json_object['username'],'success':Success}
+        else:
+            aRow = {'id':"",'username':"",'success':Success}
+
+        AllRows.append(aRow)
+
+    FinalDF = pd.DataFrame(AllRows)
+    if (outputFormat == "DF"):
+        print(FinalDF)
+    elif (outputFormat == "CSV"):
+        print(FinalDF.to_csv(index=False))
+    else:
+        print(FinalDF.to_json())
+
+
+def setlogin(outputFormat,sessionname,username,loginuser,loginpassword):
     AllUsernames = ConvertUsernameToList(username)
 
-    for aUser in AllUsernames:
+    AllRows = []
 
-        URL = urllib.parse.urljoin(DataUtils.GetUrl(sessionname), USER_SETLOGIN_URI)
-        payload = GET_USER_SET_LOGIN_BODY(aUser,loginuser,loginpassword)
-        headers = {
-            'Content-Type': "application/json",
-            'cache-control': "no-cache",
-            'X-Authorization': DataUtils.GetAuthToken(sessionname)
-        }
-        #print(payload)
-        response = requests.request(USER_SETLOGIN_REQ_TYPE, URL, data=payload, headers=headers)
-        isInError = UsersResponses.Process_Set_Login_Response(response)
+    for aUser in AllUsernames:
+        JsonData = {"username":str(aUser).lower(),"loginuser":loginuser,"loginpassword":loginpassword}
+        json_object = StdAPIUtils.generic_api_call_handler_no_post(outputFormat,sessionname,get_user_setlogin_resources,JsonData)
+        RawResponse = str(json_object)
+
+        Success = False
+        if('updated' in RawResponse): #this is a weird one.. upon update, the API returns a single string "Credentials updated for ausertocreate"
+            Success = True
+
+        aRow = {'username':str(aUser).lower(),'success':Success}
+
+        AllRows.append(aRow)
+
+    FinalDF = pd.DataFrame(AllRows)
+    if (outputFormat == "DF"):
+        print(FinalDF)
+    elif (outputFormat == "CSV"):
+        print(FinalDF.to_csv(index=False))
+    else:
+        print(FinalDF.to_json())

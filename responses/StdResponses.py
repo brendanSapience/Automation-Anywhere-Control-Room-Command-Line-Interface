@@ -20,7 +20,7 @@ def isAnomalousHtmlResponse(text):
         return False
 
 def processAPIResponse(response):
-    if(response.status_code != 200):
+    if(response.status_code >= 300):
         if(response.status_code == 500):
             logging.debug("CR API Error: {} - Hint: {} - Message: {}".format(response.status_code, "Try logging back in.",response.text))
             print("CR API Error: {} - Hint: {} - Message: {}".format(response.status_code, "Try logging back in.",response.text))

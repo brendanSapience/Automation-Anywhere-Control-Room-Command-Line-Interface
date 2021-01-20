@@ -11,16 +11,15 @@ sys.path.insert(1, './transformers')
 import DataUtils
 import StdResponses
 import ObjectsTransformers
+import StdAPIUtils
 
-def get_bot_update_resources(crversion,sessionname,token,ObjID,UpdatedObjectDefAsJson):
+def get_bot_update_resources(crversion,sessionname,token,JsonData):
+
+    Headers = StdAPIUtils.get_api_call_headers(crversion,token)
+    ObjID = JsonData['ObjID']
+    UpdatedObjectDefAsJson = JsonData['UpdatedObjectDefAsJson']
 
     if (crversion == "A2019.18"):
-        Headers = {
-        'Content-Type': "application/json",
-        'cache-control': "no-cache",
-        'X-Authorization': token
-        }
-
 
         api_op = "/v2/repository/files/"+ObjID+"/content?hasErrors=false"
         api_call_type = "PUT"
@@ -36,15 +35,12 @@ def get_bot_update_resources(crversion,sessionname,token,ObjID,UpdatedObjectDefA
 
 
 
-def get_bot_list_resources(crversion,sessionname,token,objNameFilter):
+def get_bot_list_resources(crversion,sessionname,token,JsonData):
+
+    objNameFilter = JsonData['objNameFilter']
+    Headers = StdAPIUtils.get_api_call_headers(crversion,token)
 
     if (crversion == "A2019.18"):
-        Headers = {
-        'Content-Type': "application/json",
-        'cache-control': "no-cache",
-        'X-Authorization': token
-        }
-
 
         api_op = "/v2/repository/workspaces/private/files/list"
         api_call_type = "POST"
@@ -74,15 +70,10 @@ def get_bot_list_resources(crversion,sessionname,token,objNameFilter):
     else:
         return False,None,None,None,None
 
-
-def get_bot_show_resources(crversion,sessionname,token,ObjID):
-
+def get_bot_show_resources(crversion,sessionname,token,JsonData):
+    ObjID = JsonData['ObjID']
+    Headers = StdAPIUtils.get_api_call_headers(crversion,token)
     if (crversion == "A2019.18"):
-        Headers = {
-        'Content-Type': "application/json",
-        'cache-control': "no-cache",
-        'X-Authorization': token
-        }
 
         api_op = "/v2/repository/files/"+ObjID+"/content"
         api_call_type = "GET"
@@ -93,101 +84,30 @@ def get_bot_show_resources(crversion,sessionname,token,ObjID):
 
 
 def bot_show(outputFormat,sessionname,ObjID):
-
-    url = DataUtils.GetUrl(sessionname)
-    TOKEN = DataUtils.GetAuthToken(sessionname)
-    CRVERSION = DataUtils.GetCRVersion(sessionname)
-
-    IsVersionSupported,CallType,ApiUri,Headers,Body = get_bot_show_resources(CRVERSION,sessionname,TOKEN,ObjID)
-
-    if not IsVersionSupported:
-        logging.debug("Unsupported CR Version: {}".format(crversion))
-        print("Unsupported CR Version")
-        exit(1)
-
-    FULLURL = urllib.parse.urljoin(url,ApiUri)
-
-    response = requests.request(method=CallType, url=FULLURL, data=Body, headers=Headers)
-
-    isAPICallOK = StdResponses.processAPIResponse(response)
-    if(not isAPICallOK):
-        exit(99)
-    else:
-        json_object = json.loads(response.text)
-        json_formatted_str = json.dumps(json_object, indent=2)
-        return json_formatted_str
-
+    jsonData = {"ObjID":ObjID}
+    json_object = StdAPIUtils.generic_api_call_handler_no_post(outputFormat,sessionname,get_bot_show_resources,jsonData)
+    json_formatted_str = json.dumps(json_object, indent=2)
+    return json_formatted_str
 
 def bot_list(outputFormat,sessionname,objNameFilter):
+    jsonData = {"objNameFilter":objNameFilter}
+    StdAPIUtils.generic_api_call_handler(outputFormat,sessionname,get_bot_list_resources,jsonData,ObjectsTransformers.GetListAsCsv)
 
-    url = DataUtils.GetUrl(sessionname)
-    TOKEN = DataUtils.GetAuthToken(sessionname)
-    CRVERSION = DataUtils.GetCRVersion(sessionname)
 
-    IsVersionSupported,CallType,ApiUri,Headers,Body = get_bot_list_resources(CRVERSION,sessionname,TOKEN,objNameFilter)
+def bot_update(outputFormat,sessionname,ObjID,UpdatedObjectDefAsJson):
+    jsonData = {"UpdatedObjectDefAsJson":UpdatedObjectDefAsJson,"ObjID":ObjID}
+    json_object = StdAPIUtils.generic_api_call_handler_no_post(outputFormat,sessionname,get_bot_update_resources,jsonData)
+    if (outputFormat == "DF"):
+        aDF = pd.DataFrame(json_object, index=[0])
+        print(aDF)
 
-    if not IsVersionSupported:
-        logging.debug("Unsupported CR Version: {}".format(crversion))
-        print("Unsupported CR Version")
-        exit(1)
+    elif (outputFormat == "CSV"):
+        aDF = pd.DataFrame(json_object, index=[0])
+        print(aDF.to_csv(index=False))
 
-    FULLURL = urllib.parse.urljoin(url,ApiUri)
-
-    response = requests.request(method=CallType, url=FULLURL, data=Body, headers=Headers)
-
-    isAPICallOK = StdResponses.processAPIResponse(response)
-    if(not isAPICallOK):
-        exit(99)
     else:
-        json_object = json.loads(response.text)
-        if (outputFormat == "DF"):
-            #print(json_object)
-            aDF = ObjectsTransformers.GetListAsCsv(json_object)
-            print(aDF)
-        elif (outputFormat == "CSV"):
-            #print(json_object)
-            aDF = ObjectsTransformers.GetListAsCsv(json_object)
-            print(aDF.to_csv(index=False))
-        else:
-            #print(json_object)
-            json_formatted_str = json.dumps(json_object, indent=2)
-            print(json_formatted_str)
-
-
-def bot_update(outputFormat,sessionname,UpdatedObjectDefAsJson,ObjID):
-
-    url = DataUtils.GetUrl(sessionname)
-    TOKEN = DataUtils.GetAuthToken(sessionname)
-    CRVERSION = DataUtils.GetCRVersion(sessionname)
-
-    IsVersionSupported,CallType,ApiUri,Headers,Body = get_bot_update_resources(CRVERSION,sessionname,TOKEN,UpdatedObjectDefAsJson,ObjID)
-
-    if not IsVersionSupported:
-        logging.debug("Unsupported CR Version: {}".format(crversion))
-        print("Unsupported CR Version")
-        exit(1)
-
-    FULLURL = urllib.parse.urljoin(url,ApiUri)
-
-    response = requests.request(method=CallType, url=FULLURL, data=Body, headers=Headers)
-
-    isAPICallOK = StdResponses.processAPIResponse(response)
-    if(not isAPICallOK):
-        exit(99)
-    else:
-        json_object = json.loads(response.text)
-        if (outputFormat == "DF"):
-            aDF = pd.DataFrame(json_object, index=[0])
-
-            print(aDF)
-
-        elif (outputFormat == "CSV"):
-            aDF = pd.DataFrame(json_object, index=[0])
-            print(aDF.to_csv(index=False))
-        else:
-            json_formatted_str = json.dumps(json_object, indent=2)
-            print(json_formatted_str)
-
+        json_formatted_str = json.dumps(json_object, indent=2)
+        print(json_formatted_str)
 
 def getFilterOnName(ObjectName):
     jsonFilter = '{"operator":"substring","value":"'+ObjectName+'","field":"name"}'

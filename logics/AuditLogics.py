@@ -12,7 +12,7 @@ import ActivitiesTransformers
 import StdResponses
 import StdAPIUtils
 
-def get_activity_list_resources(crversion,sessionname,token):
+def get_audit_list_resources(crversion,sessionname,token):
 
     if (crversion == "A2019.18"):
         Headers = {
@@ -22,22 +22,28 @@ def get_activity_list_resources(crversion,sessionname,token):
         }
 
 
-        api_op = "/v1/activity/history/list"
+        api_op = "/v1/audit/messages/list"
         api_call_type = "POST"
 
         Body = json.dumps(
             {
-            "sort":[
-                {
-                "field":"endDateTime",
-                "direction":"desc"
-                }
-            ],
-            "filter":{},
-            "fields":[],
-            "page":{
-                "length":200,
-                "offset":0
+                "sort": [
+                    {
+                        "field": "createdOn",
+                        "direction": "desc"
+                    }
+                ],
+                "filter": {
+                    "operator": "gt",
+                    "field": "createdOn",
+                    "value": "2020-11-18T20:43:41.030Z"
+                },
+                "fields": [],
+                "page": {
+                    "offset": 0,
+                    "total": 28865,
+                    "totalFilter": 10000,
+                    "length": 100
                 }
             }
         )

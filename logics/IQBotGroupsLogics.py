@@ -12,71 +12,26 @@ import DataUtils
 import IQBotGroupTransformers
 import IQBotCommons
 import StdResponses
+import StdAPIUtils
 
 def get_group_list_resources(crversion,sessionname,token):
-
+    Headers = StdAPIUtils.get_api_call_headers(crversion,token)
     if (crversion == "A2019.18"):
-        Headers = {
-        'Content-Type': "application/json",
-        'cache-control': "no-cache",
-        'x-authorization': token
-        }
-
         api_op = "/IQBot/api/bots"
         api_call_type = "GET"
-
         return True,api_call_type,api_op,Headers,None
     else:
         return False,None,None,None,None
 
-def list_groups(outputFormat,sessionname):
+def get_group_update_resources(crversion,sessionname,token,JsonData):
+    Headers = StdAPIUtils.get_api_call_headers(crversion,token)
+    GrpId = JsonData['GrpId']
+    GroupName = JsonData['GroupName']
+    LiID = JsonData['LiId']
+    NewStatus = JsonData['NewStatus']
 
-    url = DataUtils.GetUrl(sessionname)
-    TOKEN = DataUtils.GetAuthToken(sessionname)
-    CRVERSION = DataUtils.GetCRVersion(sessionname)
-
-    IsVersionSupported,CallType,ApiUri,Headers,Body = get_group_list_resources(CRVERSION,sessionname,TOKEN)
-
-    if not IsVersionSupported:
-        logging.debug("Unsupported CR Version: {}".format(crversion))
-        print("Unsupported CR Version")
-        exit(1)
-
-    FULLURL = urllib.parse.urljoin(url,ApiUri)
-
-    response = requests.request(method=CallType, url=FULLURL, data=Body, headers=Headers)
-
-    isAPICallOK = StdResponses.processAPIResponse(response)
-    #print(response.text)
-    if(not isAPICallOK):
-        exit(99)
-    else:
-        json_object = json.loads(response.text)
-        if (outputFormat == "DF"):
-            #print(json_object)
-            aDF = IQBotGroupTransformers.GetGroupListAsCsv(json_object)
-            print(aDF)
-        elif (outputFormat == "CSV"):
-            #print(json_object)
-            aDF = IQBotGroupTransformers.GetGroupListAsCsv(json_object)
-            print(aDF.to_csv(index=False))
-        else:
-            #print(json_object)
-            json_formatted_str = json.dumps(json_object, indent=2)
-            print(json_formatted_str)
-
-#LI_GROUP_LIST_REQ_TYPE = "POST"
-#LI_GROUP_LIST_URI = "/IQBot/api/bots"
-
-
-def get_group_update_resources(crversion,sessionname,token,LiID,GroupID,GroupNumber,NewStatus):
     VALIDACTIONS = ['ON','OFF']
     if (crversion == "A2019.18"):
-        Headers = {
-        'Content-Type': "application/json",
-        'cache-control': "no-cache",
-        'x-authorization': token
-        }
         #print("STATUS:"+NewStatus)
         NewState = ""
         Body = ""
@@ -92,12 +47,14 @@ def get_group_update_resources(crversion,sessionname,token,LiID,GroupID,GroupNum
             }
         )
 
-        #print("BODY:"+str(Body))
         api_op = "/IQBot/api/projects/"+LiID+"/categories/"+GroupNumber+"/bots/"+GroupID+"/state"
         api_call_type = "POST"
         return True,api_call_type,api_op,Headers,Body
     else:
         return False,None,None,None,None
+
+def list_groups(outputFormat,sessionname):
+    StdAPIUtils.generic_api_call_handler(outputFormat,sessionname,get_group_list_resources,{},IQBotGroupTransformers.GetGroupListAsCsv)
 
 def change_group_status(outputFormat,sessionname,LiID,GroupNum,NewStatus):
 
@@ -106,7 +63,6 @@ def change_group_status(outputFormat,sessionname,LiID,GroupNum,NewStatus):
     CRVERSION = DataUtils.GetCRVersion(sessionname)
 
     liid,groupMappings = IQBotCommons.GetAllGroupsFromLI(sessionname,LiID)
-
 
     AllGroups = []
     if("," in GroupNum):
@@ -119,29 +75,19 @@ def change_group_status(outputFormat,sessionname,LiID,GroupNum,NewStatus):
     AllRows = []
     for Grp in AllGroups:
         GrpId = groupMappings[Grp]
-        IsVersionSupported,CallType,ApiUri,Headers,Body = get_group_update_resources(CRVERSION,sessionname,TOKEN,LiID,GrpId,Grp,NewStatus)
+        JsonData = {"GrpId":GrpId,"GroupName":Grp,"LiId":LiID,"NewStatus":NewStatus}
+        #IsVersionSupported,CallType,ApiUri,Headers,Body = get_group_update_resources(CRVERSION,sessionname,TOKEN,LiID,GrpId,Grp,NewStatus)
+        json_object = StdAPIUtils.generic_api_call_handler_no_post(outputFormat,sessionname,get_group_update_resources,JsonData)
 
-        if not IsVersionSupported:
-            logging.debug("Unsupported CR Version: {}".format(crversion))
-            print("Unsupported CR Version")
-            exit(1)
-
-        FULLURL = urllib.parse.urljoin(url,ApiUri)
-        response = requests.request(method=CallType, url=FULLURL, data=Body, headers=Headers)
-        isAPICallOK = StdResponses.processAPIResponse(response)
-        if(not isAPICallOK):
-            exit(99)
-        else:
-            json_object = json.loads(response.text)
-            Success = False
-            CurentStatus = 'no change'
-            GroupNumber = Grp
-            if('success' in json_object):
-                Success = json_object['success']
-            if('data' in json_object):
-                CurentStatus = json_object['data']
-            aRow = {'GroupNumber':GroupNumber,'CurrentState':CurentStatus,'GroupID':GrpId,'UpdateSuccess':Success}
-            AllRows.append(aRow)
+        Success = False
+        CurentStatus = 'no change'
+        GroupNumber = Grp
+        if('success' in json_object):
+            Success = json_object['success']
+        if('data' in json_object):
+            CurentStatus = json_object['data']
+        aRow = {'GroupNumber':GroupNumber,'CurrentState':CurentStatus,'GroupID':GrpId,'UpdateSuccess':Success}
+        AllRows.append(aRow)
 
     FinalDF = pd.DataFrame(AllRows)
     if (outputFormat == "DF"):
