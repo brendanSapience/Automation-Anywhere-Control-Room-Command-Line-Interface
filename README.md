@@ -73,6 +73,8 @@ The output format can be set to CSV, DF (DataFrame) or JSON (Default) by using t
   * wlm
     * list
     * show
+    * list_workitems
+    * add_workitems
 
 * IQ Bot Commands (iqcli):
   * li (learning Instance)
@@ -137,7 +139,6 @@ python ./crcli.py -s PurpleEagle bot update -i 1031 -d ./Bot1031.json
 
 ## TO DO
 
-  * List items in queue
   * Create workitem
   * Delete workitem
   * Update Workitem (Status or content)

@@ -12,6 +12,54 @@ import WLMTransformers
 import StdResponses
 import StdAPIUtils
 
+def get_workitem_upload_resources(crversion,sessionname,token,JsonData):
+    Headers = StdAPIUtils.get_api_call_headers(crversion,token)
+
+    queueID = JsonData['queueID']
+    JsonWorkItems = JsonData['JsonWorkItems']
+
+    if (crversion == "A2019.18"):
+
+        api_op = "/v3/wlm/queues/"+queueID+"/workitems"
+        api_call_type = "POST"
+        Body = JsonWorkItems
+
+        return True,api_call_type,api_op,Headers,Body #payload.encode("utf-8")
+    else:
+        return False,None,None,None,None
+
+
+def get_queue_structure_resources(crversion,sessionname,token,JsonData):
+    queueID = JsonData['queueID']
+    Headers = StdAPIUtils.get_api_call_headers(crversion,token)
+
+    if (crversion == "A2019.18"):
+        api_op = "/v3/wlm/workitemmodels/"+queueID
+        api_call_type = "GET"
+        return True,api_call_type,api_op,Headers,None
+    else:
+        return False,None,None,None,None
+
+def get_queue_users_resources(crversion,sessionname,token,JsonData,UserType):
+    queueID = JsonData['queueID']
+    Headers = StdAPIUtils.get_api_call_headers(crversion,token)
+
+    if (crversion == "A2019.18"):
+        api_op = "/v3/wlm/queues/"+queueID+"/"+UserType
+        api_call_type = "GET"
+        return True,api_call_type,api_op,Headers,None
+    else:
+        return False,None,None,None,None
+
+def get_queue_owners_resources(crversion,sessionname,token,JsonData):
+    return get_queue_users_resources(crversion,sessionname,token,JsonData,"members")
+
+def get_queue_participants_resources(crversion,sessionname,token,JsonData):
+    return get_queue_users_resources(crversion,sessionname,token,JsonData,"participants")
+
+def get_queue_consumers_resources(crversion,sessionname,token,JsonData):
+    return get_queue_users_resources(crversion,sessionname,token,JsonData,"consumers")
+
 def get_workitem_info_resources(crversion,sessionname,token,JsonData):
 
     queueID = JsonData['queueID']
@@ -98,9 +146,34 @@ def get_queue_list_resources(crversion,sessionname,token,JsonData):
     else:
         return False,None,None,None,None
 
+def wlm_add_workitems(outputFormat,sessionname,queueID,JsonStringOfWorkitemsToAdd):
+    #{"workItems":[{"json": {"firstname": "Yli","lastname": "Z","dob": "1111111","membershipnumber": ""}}]}
+    jsonData = {"queueID":queueID,"JsonWorkItems":JsonStringOfWorkitemsToAdd}
+    StdAPIUtils.generic_api_call_handler(outputFormat,sessionname,get_workitem_upload_resources,jsonData,WLMTransformers.GetCsvWorkitemUploadAsCsv)
+
 def wlm_queue_list(outputFormat,sessionname):
     StdAPIUtils.generic_api_call_handler(outputFormat,sessionname,get_queue_list_resources,{},WLMTransformers.GetListAsCsv)
 
-def wlm_queue_show(outputFormat,sessionname,queueID):
+def wlm_queue_show(outputFormat,sessionname,queueID,InfoType):
+    if(InfoType.upper() == "PARTICIPANTS"):
+        wlm_queue_get_participants_list(outputFormat,sessionname,queueID)
+    if(InfoType.upper() == "OWNERS"):
+        wlm_queue_get_owners_list(outputFormat,sessionname,queueID)
+    if(InfoType.upper() == "CONSUMERS"):
+        wlm_queue_get_consumers_list(outputFormat,sessionname,queueID)
+
+def wlm_queue_workitem_list(outputFormat,sessionname,queueID):
     jsonData = {"queueID":queueID}
-    StdAPIUtils.generic_api_call_handler(outputFormat,sessionname,get_queue_info_resources,jsonData,WLMTransformers.GetQueueDefinitionAsCsv)
+    StdAPIUtils.generic_api_call_handler(outputFormat,sessionname,get_workitem_list_resources,jsonData,WLMTransformers.GetWorkitemListAsCsv)
+
+def wlm_queue_get_consumers_list(outputFormat,sessionname,queueID):
+    jsonData = {"queueID":queueID}
+    StdAPIUtils.generic_api_call_handler(outputFormat,sessionname,get_queue_consumers_resources,jsonData,WLMTransformers.GetQueueInfoAsCsv)
+
+def wlm_queue_get_participants_list(outputFormat,sessionname,queueID):
+    jsonData = {"queueID":queueID}
+    StdAPIUtils.generic_api_call_handler(outputFormat,sessionname,get_queue_participants_resources,jsonData,WLMTransformers.GetQueueInfoAsCsv)
+
+def wlm_queue_get_owners_list(outputFormat,sessionname,queueID):
+    jsonData = {"queueID":queueID}
+    StdAPIUtils.generic_api_call_handler(outputFormat,sessionname,get_queue_owners_resources,jsonData,WLMTransformers.GetQueueInfoAsCsv)

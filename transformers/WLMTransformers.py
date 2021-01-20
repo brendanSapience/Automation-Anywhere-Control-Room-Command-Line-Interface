@@ -1,6 +1,27 @@
 import json
 import pandas as pd
 
+def GetCsvWorkitemUploadAsCsv(jsonResults):
+
+    myDF = pd.DataFrame(jsonResults['list'])
+    myDF.pop('json')
+    myDF.pop('version')
+    myDF.pop('result')
+    myDF.pop('updatedBy')
+    myDF.pop('updatedOn')
+    myDF.pop('deviceUserId')
+    return myDF
+
+def GetQueueInfoAsCsv(jsonResults):
+    if('roles' in jsonResults):
+        jsonResults = jsonResults['roles']
+    myDF = pd.DataFrame(jsonResults)
+    return myDF
+
+def GetWorkitemListAsCsv(jsonResults):
+    myDF = pd.DataFrame(jsonResults['list'])
+    return myDF
+
 def GetListAsCsv(jsonResults):
 
     AllRows = []

@@ -263,7 +263,7 @@ bot_update_parser.add_argument("-d","--def",default = "", help = "Updated Object
 
 #####
 # WLM Parser
-# wlm <list>
+# wlm <list,show>
 #####
 
 # WLM commands
@@ -280,17 +280,47 @@ queue_list_parser = wlm_subparsers.add_parser('list')
 queue_list_parser.set_defaults(func=wlm_queue_list)
 #bot_list_parser.add_argument("-l","--name",default = "", help = "Name filter", dest = "ObjNameFilter")
 
-# queue list
+# queue show
 def wlm_queue_show(args):
     if not args.SESSIONNAME:
         parser.error('no session name passed')
     if not args.QueueID:
         parser.error('no queue ID passed')
-    WLMLogics.wlm_queue_show(args.OUTPUTFORMAT,args.SESSIONNAME,args.QueueID)
+    WLMLogics.wlm_queue_show(args.OUTPUTFORMAT,args.SESSIONNAME,args.QueueID,args.INFOTYPE)
 
 queue_show_parser = wlm_subparsers.add_parser('show')
 queue_show_parser.set_defaults(func=wlm_queue_show)
 queue_show_parser.add_argument("-i","--id",default = "", help = "Queue ID", dest = "QueueID")
+queue_show_parser.add_argument("-t","--type",default = "OWNERS", help = "<MEMBERS,OWNERS,PARTICIPANTS", dest = "INFOTYPE")
+
+# workitem list
+def wlm_queue_workitem_list(args):
+    if not args.SESSIONNAME:
+        parser.error('no session name passed')
+    if not args.QueueID:
+        parser.error('no queue ID passed')
+    WLMLogics.wlm_queue_workitem_list(args.OUTPUTFORMAT,args.SESSIONNAME,args.QueueID)
+
+workitem_list_parser = wlm_subparsers.add_parser('list_workitems')
+workitem_list_parser.set_defaults(func=wlm_queue_workitem_list)
+workitem_list_parser.add_argument("-i","--id",default = "", help = "Queue ID", dest = "QueueID")
+
+# workitem update
+def wlm_add_workitems(args):
+    if not args.SESSIONNAME:
+        parser.error('no session name passed')
+    if not args.QueueID:
+        parser.error('no queue ID passed')
+    if not args.JSONWorkItems:
+        parser.error('You need to pass parameter -w (JSON String of workitems to add)')
+
+    WLMLogics.wlm_add_workitems(args.OUTPUTFORMAT,args.SESSIONNAME,args.QueueID,args.JSONWorkItems)
+
+wi_upload_parser = wlm_subparsers.add_parser('add_workitems')
+wi_upload_parser.set_defaults(func=wlm_add_workitems)
+wi_upload_parser.add_argument("-i","--id",default = "", help = "Queue ID", dest = "QueueID")
+wi_upload_parser.add_argument("-w","--workitems",default = "", help = "JSON String of Workitems to add. For example: {'workItems':[{'json': {'firstname': 'Yli','lastname': 'Z','dob': '1111111','membershipnumber': ''}}]}", dest = "JSONWorkItems")
+
 
 if __name__ == '__main__':
     args = parser.parse_args()
