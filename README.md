@@ -137,4 +137,11 @@ python ./crcli.py -s PurpleEagle bot update -i 1031 -d ./Bot1031.json
 
 ## TO DO
 
-add more stuff, feel free to request!
+  * List items in queue
+  * Create workitem
+  * Delete workitem
+  * Update Workitem (Status or content)
+  * Credential vault import
+  * Credential vault export
+
+feel free to request additional items
