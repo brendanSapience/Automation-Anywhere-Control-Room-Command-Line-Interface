@@ -1,5 +1,6 @@
 import json
 import pandas as pd
+from pandas.io.json import json_normalize
 
 def GetCsvWorkitemUploadAsCsv(jsonResults):
 
@@ -18,7 +19,12 @@ def GetQueueInfoAsCsv(jsonResults):
     myDF = pd.DataFrame(jsonResults)
     return myDF
 
+def GetWorkitemInfoAsCsv(jsonResults):
+    myDF = json_normalize(jsonResults)
+    return myDF
+
 def GetWorkitemListAsCsv(jsonResults):
+
     myDF = pd.DataFrame(jsonResults['list'])
     return myDF
 

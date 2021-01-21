@@ -73,8 +73,12 @@ The output format can be set to CSV, DF (DataFrame) or JSON (Default) by using t
   * wlm
     * list
     * show
-    * list_workitems
-    * add_workitems
+
+  * workitem
+      * list
+      * add
+      * show
+      * delete
 
 * IQ Bot Commands (iqcli):
   * li (learning Instance)
@@ -89,7 +93,7 @@ The output format can be set to CSV, DF (DataFrame) or JSON (Default) by using t
 ## Examples
 ```
 # Authenticate
-./crcli.py auth login -u myUser -p "myPassword" -r "http://192.168.1.100"
+python ./crcli.py auth login -u myUser -p "myPassword" -r "http://192.168.1.100"
 ```
 
 ```
@@ -115,7 +119,7 @@ python ./iqcli.py -s RedDog -f DF li list_groups -i de0c78da-7700-4fe8-b05e-4de8
 
 ```
 # Turn On all Groups in Learning Instance with ID 5e098ba6-9e74-4457-bd49-65853f713da7 (and display result as DataFrame)
-./iqcli.py -s RedDog -f DF group update -i 5e098ba6-9e74-4457-bd49-65853f713da7 -g ALL -s ON
+python ./iqcli.py -s RedDog -f DF group update -i 5e098ba6-9e74-4457-bd49-65853f713da7 -g ALL -s ON
 ```
 
 ```
@@ -137,10 +141,19 @@ python ./crcli.py -s PurpleEagle bot show -i 1031 > Bot1031.json
 python ./crcli.py -s PurpleEagle bot update -i 1031 -d ./Bot1031.json
 ```
 
+```
+# Add 2 workitems to a queue
+python ./crcli.py -s ${CRSESSIONNAME} -f DF workitem add -i 3 -w "{'workItems':[{'json': {'firstname': 'Yli','lastname': 'Z','dob': '1111111','membershipnumber': '1'}},{'json': {'firstname': 'Linus','lastname': 'Z','dob': '1111111','membershipnumber': '2'}}]}"
+```
+
+```
+# Delete 3 workitems from a queue (ids 25, 26 and 27)
+python ./crcli.py -s ${CRSESSIONNAME} -f CSV workitem delete -i 3 -w 25,26,27
+```
+
+
 ## TO DO
 
-  * Create workitem
-  * Delete workitem
   * Update Workitem (Status or content)
   * Credential vault import
   * Credential vault export

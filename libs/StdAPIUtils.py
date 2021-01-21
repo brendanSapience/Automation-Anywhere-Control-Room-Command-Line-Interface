@@ -82,5 +82,8 @@ def generic_api_call_handler_no_post(outputFormat,sessionname,get_res_func,res_d
         if(not isAPICallOK):
             exit(99)
         else:
-            json_object = json.loads(response.text)
-            return json_object
+            if(response.text != ""):
+                json_object = json.loads(response.text)
+                return json_object
+            else:
+                return response.status_code

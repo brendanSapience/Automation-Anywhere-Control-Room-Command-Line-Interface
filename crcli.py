@@ -293,6 +293,11 @@ queue_show_parser.set_defaults(func=wlm_queue_show)
 queue_show_parser.add_argument("-i","--id",default = "", help = "Queue ID", dest = "QueueID")
 queue_show_parser.add_argument("-t","--type",default = "OWNERS", help = "<MEMBERS,OWNERS,PARTICIPANTS", dest = "INFOTYPE")
 
+# Workitems Command
+workitem_parser = subparsers.add_parser('workitem')
+workitem_subparsers = workitem_parser.add_subparsers()
+
+
 # workitem list
 def wlm_queue_workitem_list(args):
     if not args.SESSIONNAME:
@@ -301,11 +306,11 @@ def wlm_queue_workitem_list(args):
         parser.error('no queue ID passed')
     WLMLogics.wlm_queue_workitem_list(args.OUTPUTFORMAT,args.SESSIONNAME,args.QueueID)
 
-workitem_list_parser = wlm_subparsers.add_parser('list_workitems')
+workitem_list_parser = workitem_subparsers.add_parser('list')
 workitem_list_parser.set_defaults(func=wlm_queue_workitem_list)
 workitem_list_parser.add_argument("-i","--id",default = "", help = "Queue ID", dest = "QueueID")
 
-# workitem update
+# workitem add
 def wlm_add_workitems(args):
     if not args.SESSIONNAME:
         parser.error('no session name passed')
@@ -316,11 +321,40 @@ def wlm_add_workitems(args):
 
     WLMLogics.wlm_add_workitems(args.OUTPUTFORMAT,args.SESSIONNAME,args.QueueID,args.JSONWorkItems)
 
-wi_upload_parser = wlm_subparsers.add_parser('add_workitems')
+wi_upload_parser = workitem_subparsers.add_parser('add')
 wi_upload_parser.set_defaults(func=wlm_add_workitems)
 wi_upload_parser.add_argument("-i","--id",default = "", help = "Queue ID", dest = "QueueID")
 wi_upload_parser.add_argument("-w","--workitems",default = "", help = "JSON String of Workitems to add. For example: {'workItems':[{'json': {'firstname': 'Yli','lastname': 'Z','dob': '1111111','membershipnumber': ''}}]}", dest = "JSONWorkItems")
 
+# workitem show
+def workitem_show(args):
+    if not args.SESSIONNAME:
+        parser.error('no session name passed')
+    if not args.QueueID:
+        parser.error('no queue ID passed')
+    if not args.WorkitemID:
+        parser.error('no workitem ID passed')
+    WLMLogics.workitem_show(args.OUTPUTFORMAT,args.SESSIONNAME,args.QueueID,args.WorkitemID)
+
+workitem_show_parser = workitem_subparsers.add_parser('show')
+workitem_show_parser.set_defaults(func=workitem_show)
+workitem_show_parser.add_argument("-i","--id",default = "", help = "Queue ID", dest = "QueueID")
+workitem_show_parser.add_argument("-w","--wiid",default = "", help = "Workitem ID", dest = "WorkitemID")
+
+#workitem_delete
+def workitem_delete(args):
+    if not args.SESSIONNAME:
+        parser.error('no session name passed')
+    if not args.QueueID:
+        parser.error('no queue ID passed')
+    if not args.WorkitemID:
+        parser.error('no workitem ID passed')
+    WLMLogics.workitem_delete(args.OUTPUTFORMAT,args.SESSIONNAME,args.QueueID,args.WorkitemID)
+
+workitem_delete_parser = workitem_subparsers.add_parser('delete')
+workitem_delete_parser.set_defaults(func=workitem_delete)
+workitem_delete_parser.add_argument("-i","--id",default = "", help = "Queue ID", dest = "QueueID")
+workitem_delete_parser.add_argument("-w","--wiid",default = "", help = "Workitem IDs (comma separated IDs)", dest = "WorkitemID")
 
 if __name__ == '__main__':
     args = parser.parse_args()

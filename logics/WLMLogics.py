@@ -3,6 +3,7 @@ import json
 import sys
 import os
 import urllib.parse
+import pandas as pd
 
 sys.path.insert(1, './libs')
 sys.path.insert(1, './responses')
@@ -11,6 +12,39 @@ import DataUtils
 import WLMTransformers
 import StdResponses
 import StdAPIUtils
+
+
+def get_workitem_delete_resources(crversion,sessionname,token,JsonData):
+    Headers = StdAPIUtils.get_api_call_headers(crversion,token)
+
+    queueID = JsonData['queueID']
+    workitemID = JsonData['workitemID']
+
+    if (crversion == "A2019.18"):
+
+        api_op = "/v3/wlm/queues/"+queueID+"/workitems/"+workitemID
+        api_call_type = "DELETE"
+
+        return True,api_call_type,api_op,Headers,None
+    else:
+        return False,None,None,None,None
+
+def get_workitem_info_resources(crversion,sessionname,token,JsonData):
+    Headers = StdAPIUtils.get_api_call_headers(crversion,token)
+
+    queueID = JsonData['queueID']
+    workitemID = JsonData['workitemID']
+
+    if (crversion == "A2019.18"):
+
+        api_op = "/v3/wlm/queues/"+queueID+"/workitems/"+workitemID
+        api_call_type = "GET"
+
+        return True,api_call_type,api_op,Headers,None
+    else:
+        return False,None,None,None,None
+
+
 
 def get_workitem_upload_resources(crversion,sessionname,token,JsonData):
     Headers = StdAPIUtils.get_api_call_headers(crversion,token)
@@ -177,3 +211,38 @@ def wlm_queue_get_participants_list(outputFormat,sessionname,queueID):
 def wlm_queue_get_owners_list(outputFormat,sessionname,queueID):
     jsonData = {"queueID":queueID}
     StdAPIUtils.generic_api_call_handler(outputFormat,sessionname,get_queue_owners_resources,jsonData,WLMTransformers.GetQueueInfoAsCsv)
+
+#get_workitem_info_resources
+def workitem_show(outputFormat,sessionname,queueID,workitemID):
+    jsonData = {"queueID":queueID,"workitemID":workitemID}
+    StdAPIUtils.generic_api_call_handler(outputFormat,sessionname,get_workitem_info_resources,jsonData,WLMTransformers.GetWorkitemInfoAsCsv)
+
+def workitem_delete(outputFormat,sessionname,queueID,workitemIDs):
+
+    ListOfWorkitemIDs = workitemIDs.lower().split(",")
+    ListOfWorkitemNumIDs = [s for s in ListOfWorkitemIDs if s.isdigit()]
+    ListOfWorkitemNONNumIDs = [s for s in ListOfWorkitemIDs if not s.isdigit()]
+    if(len(ListOfWorkitemNONNumIDs)>0):
+        print("Error: Some Workitem IDs are not Numbers: "+str(ListOfWorkitemNONNumIDs))
+        exit(99)
+
+    AllRows = []
+    for workitemID in ListOfWorkitemNumIDs:
+
+        jsonData = {"queueID":queueID,"workitemID":workitemID}
+
+        RetCode = StdAPIUtils.generic_api_call_handler_no_post(outputFormat,sessionname,get_workitem_delete_resources,jsonData)
+        if(RetCode == 204):
+            aRow = {'QueueID':queueID,'WorkitemID':workitemID,'DeleteSuccess':True}
+            AllRows.append(aRow)
+        else:
+            aRow = {'QueueID':queueID,'WorkitemID':workitemID,'DeleteSuccess':False}
+            AllRows.append(aRow)
+
+    FinalDF = pd.DataFrame(AllRows)
+    if (outputFormat == "DF"):
+        print(FinalDF)
+    elif (outputFormat == "CSV"):
+        print(FinalDF.to_csv(index=False))
+    else:
+        print(FinalDF.to_json())
