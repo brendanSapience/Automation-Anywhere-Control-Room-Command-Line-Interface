@@ -21,6 +21,7 @@ import ObjectsLogics
 import CredentialsLogics
 import WLMLogics
 import ActivitiesLogics
+import AdminSettingsLogics
 import DataUtils
 
 VERSION="0.0.1"
@@ -390,6 +391,39 @@ def creds_show(args):
 creds_show_parser = credentials_subparsers.add_parser('show')
 creds_show_parser.set_defaults(func=creds_show)
 creds_show_parser.add_argument("-i","--id",default = "", help = "Credentials ID", dest = "CREDSID")
+
+
+#####
+# Admin Parser
+# admin <>
+#####
+
+# admin commands
+admin_pwd_parser = subparsers.add_parser('admin_pwd')
+admin_pwd_subparsers = admin_pwd_parser.add_subparsers()
+
+#
+def admin_passwordsettings_show(args):
+    if not args.SESSIONNAME:
+        parser.error('no session name passed')
+    AdminSettingsLogics.show_pwd_settings(args.OUTPUTFORMAT,args.SESSIONNAME)
+
+admin_pwd_show_parser = admin_pwd_subparsers.add_parser('show')
+admin_pwd_show_parser.set_defaults(func=admin_passwordsettings_show)
+#bot_list_parser.add_argument("-l","--name",default = "", help = "Name filter", dest = "ObjNameFilter")
+
+
+def admin_passwordsettings_update(args):
+    if not args.SESSIONNAME:
+        parser.error('no session name passed')
+    if not args.AdminPwdSettingsAsJson:
+        parser.error('no JSON File passed')
+    AdminSettingsLogics.update_pwd_settings(args.OUTPUTFORMAT,args.SESSIONNAME,args.AdminPwdSettingsAsJson)
+
+
+admin_pwd_update_parser = admin_pwd_subparsers.add_parser('update')
+admin_pwd_update_parser.set_defaults(func=admin_passwordsettings_update)
+admin_pwd_update_parser.add_argument("-d","--def",default = "", help = "Updated Admin Password Definition (as JSON file)", dest = "AdminPwdSettingsAsJson")
 
 if __name__ == '__main__':
     args = parser.parse_args()

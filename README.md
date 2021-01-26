@@ -136,7 +136,7 @@ python ./crcli.py -s PurpleEagle -f DF bot list -l "Api"
 1        662  API_Triggered_Bot      661  Automation Anywhere\Bots\API Bots\API_Triggere...    application/vnd.aa.taskbot
 2       1031           MyApiBot      661         Automation Anywhere\Bots\API Bots\MyApiBot    application/vnd.aa.taskbot
 
-# Step 2: Get Bt definition as JSON
+# Step 2: Get Bot definition as JSON
 python ./crcli.py -s PurpleEagle bot show -i 1031 > Bot1031.json
 
 # Step 3: Modify the JSON file as needed
@@ -153,6 +153,18 @@ python ./crcli.py -s ${CRSESSIONNAME} -f DF workitem add -i 3 -w "{'workItems':[
 ```
 # Delete 3 workitems from a queue (ids 25, 26 and 27)
 python ./crcli.py -s ${CRSESSIONNAME} -f CSV workitem delete -i 3 -w 25,26,27
+```
+
+
+```
+# Update the Password Settings for CR
+# Step 1: get current settings
+python ./crcli.py -s AdminEagle admin_pwd show > ./currentSettings.json
+
+# Step 2: Modify the JSON file as needed (ex: set securityQuestionsEnabled to false)
+
+# Step 3: Update the settings with the new JSON Definition
+python ./crcli.py -s PurpleEagle admin_pwd update -d ./currentSettings.json
 ```
 
 
