@@ -80,6 +80,10 @@ The output format can be set to CSV, DF (DataFrame) or JSON (Default) by using t
       * show
       * delete
 
+  * creds (credentials)
+      * list
+      * show
+
 * IQ Bot Commands (iqcli):
   * li (learning Instance)
     * list

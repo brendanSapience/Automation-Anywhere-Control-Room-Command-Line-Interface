@@ -18,6 +18,7 @@ import DevicesLogics
 import UsersLogics
 import RolesLogics
 import ObjectsLogics
+import CredentialsLogics
 import WLMLogics
 import ActivitiesLogics
 import DataUtils
@@ -355,6 +356,40 @@ workitem_delete_parser = workitem_subparsers.add_parser('delete')
 workitem_delete_parser.set_defaults(func=workitem_delete)
 workitem_delete_parser.add_argument("-i","--id",default = "", help = "Queue ID", dest = "QueueID")
 workitem_delete_parser.add_argument("-w","--wiid",default = "", help = "Workitem IDs (comma separated IDs)", dest = "WorkitemID")
+
+
+#####
+# Credentials Parser
+# creds <list,show>
+#####
+
+# Credentials commands
+credentials_parser = subparsers.add_parser('creds')
+credentials_subparsers = credentials_parser.add_subparsers()
+
+# credentials list
+def creds_list(args):
+    if not args.SESSIONNAME:
+        parser.error('no session name passed')
+
+    CredentialsLogics.credentials_list(args.OUTPUTFORMAT,args.SESSIONNAME)
+
+creds_list_parser = credentials_subparsers.add_parser('list')
+creds_list_parser.set_defaults(func=creds_list)
+#bot_list_parser.add_argument("-l","--name",default = "", help = "Name filter", dest = "ObjNameFilter")
+
+# credentials show
+def creds_show(args):
+    if not args.SESSIONNAME:
+        parser.error('no session name passed')
+    if not args.CREDSID:
+        parser.error('no Credentials ID passed')
+
+    CredentialsLogics.credentials_show(args.OUTPUTFORMAT,args.SESSIONNAME,args.CREDSID)
+
+creds_show_parser = credentials_subparsers.add_parser('show')
+creds_show_parser.set_defaults(func=creds_show)
+creds_show_parser.add_argument("-i","--id",default = "", help = "Credentials ID", dest = "CREDSID")
 
 if __name__ == '__main__':
     args = parser.parse_args()
