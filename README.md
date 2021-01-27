@@ -49,16 +49,21 @@ The output format can be set to CSV, DF (DataFrame) or JSON (Default) by using t
 ## Commands & Subcommands Currently Available:
 
 * Control Room Commands (crcli):
+
   * auth
     * login: authenticate to CR
     * logout: logout of CR
     * list: list existing Sessions
+
   * device
     * list
+
   * role
     * list
+
   * activity
     * list
+
   * user
     * list
     * create: create a CR user
@@ -80,9 +85,17 @@ The output format can be set to CSV, DF (DataFrame) or JSON (Default) by using t
       * show
       * delete
 
-  * creds (credentials)
+  * creds
       * list
       * show
+
+  * admin (admin settings)
+    * smtp
+      * update
+      * show
+    * password (password rules)
+      * update
+      * show   
 
 * IQ Bot Commands (iqcli):
   * li (learning Instance)
