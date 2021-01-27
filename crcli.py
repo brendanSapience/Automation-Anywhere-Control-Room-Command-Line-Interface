@@ -392,38 +392,55 @@ creds_show_parser = credentials_subparsers.add_parser('show')
 creds_show_parser.set_defaults(func=creds_show)
 creds_show_parser.add_argument("-i","--id",default = "", help = "Credentials ID", dest = "CREDSID")
 
-
 #####
 # Admin Parser
 # admin <>
 #####
 
 # admin commands
-admin_pwd_parser = subparsers.add_parser('admin_pwd')
-admin_pwd_subparsers = admin_pwd_parser.add_subparsers()
+admin_settings_parser = subparsers.add_parser('admin')
+admin_settings_subparsers = admin_settings_parser.add_subparsers()
 
 #
-def admin_passwordsettings_show(args):
+def admin_settings_show(args):
+    SupportedTypes = ['smtp','password']
     if not args.SESSIONNAME:
         parser.error('no session name passed')
-    AdminSettingsLogics.show_pwd_settings(args.OUTPUTFORMAT,args.SESSIONNAME)
+    if not args.ADMINSETTINGSTYPE:
+        parser.error('no settings type passed')
+    if not args.ADMINSETTINGSTYPE in SupportedTypes:
+        parser.error('settings type is not supported:'+str(SupportedTypes))
 
-admin_pwd_show_parser = admin_pwd_subparsers.add_parser('show')
-admin_pwd_show_parser.set_defaults(func=admin_passwordsettings_show)
-#bot_list_parser.add_argument("-l","--name",default = "", help = "Name filter", dest = "ObjNameFilter")
+    if (args.ADMINSETTINGSTYPE == SupportedTypes[1]):
+        AdminSettingsLogics.show_pwd_settings(args.OUTPUTFORMAT,args.SESSIONNAME)
+    if (args.ADMINSETTINGSTYPE == SupportedTypes[0]):
+        AdminSettingsLogics.show_smtp_settings(args.OUTPUTFORMAT,args.SESSIONNAME)
 
+admin_settings_show_parser = admin_settings_subparsers.add_parser('show')
+admin_settings_show_parser.set_defaults(func=admin_settings_show)
+admin_settings_show_parser.add_argument("-t","--type",default = "", help = "Setting Type <smtp,password>", dest = "ADMINSETTINGSTYPE")
 
-def admin_passwordsettings_update(args):
+def admin_settings_update(args):
+    SupportedTypes = ['smtp','password']
     if not args.SESSIONNAME:
         parser.error('no session name passed')
+    if not args.ADMINSETTINGSTYPE:
+        parser.error('no settings type passed')
+    if not args.ADMINSETTINGSTYPE in SupportedTypes:
+        parser.error('settings type is not supported:'+str(SupportedTypes))
     if not args.AdminPwdSettingsAsJson:
         parser.error('no JSON File passed')
-    AdminSettingsLogics.update_pwd_settings(args.OUTPUTFORMAT,args.SESSIONNAME,args.AdminPwdSettingsAsJson)
 
+    if (args.ADMINSETTINGSTYPE == SupportedTypes[1]):
+        AdminSettingsLogics.update_pwd_settings(args.OUTPUTFORMAT,args.SESSIONNAME,args.AdminPwdSettingsAsJson)
+    if (args.ADMINSETTINGSTYPE == SupportedTypes[0]):
+        AdminSettingsLogics.update_smtp_settings(args.OUTPUTFORMAT,args.SESSIONNAME,args.AdminPwdSettingsAsJson)
 
-admin_pwd_update_parser = admin_pwd_subparsers.add_parser('update')
-admin_pwd_update_parser.set_defaults(func=admin_passwordsettings_update)
-admin_pwd_update_parser.add_argument("-d","--def",default = "", help = "Updated Admin Password Definition (as JSON file)", dest = "AdminPwdSettingsAsJson")
+admin_settings_update_parser = admin_settings_subparsers.add_parser('update')
+admin_settings_update_parser.set_defaults(func=admin_settings_update)
+admin_settings_update_parser.add_argument("-t","--type",default = "", help = "Setting Type <smtp,password>", dest = "ADMINSETTINGSTYPE")
+admin_settings_update_parser.add_argument("-d","--def",default = "", help = "Updated Admin Password Definition (as JSON file)", dest = "AdminPwdSettingsAsJson")
+
 
 if __name__ == '__main__':
     args = parser.parse_args()

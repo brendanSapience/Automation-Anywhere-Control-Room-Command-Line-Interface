@@ -159,12 +159,23 @@ python ./crcli.py -s ${CRSESSIONNAME} -f CSV workitem delete -i 3 -w 25,26,27
 ```
 # Update the Password Settings for CR
 # Step 1: get current settings
-python ./crcli.py -s AdminEagle admin_pwd show > ./currentSettings.json
+python ./crcli.py -s AdminEagle admin show -t password > ./currentSettings.json
 
 # Step 2: Modify the JSON file as needed (ex: set securityQuestionsEnabled to false)
 
 # Step 3: Update the settings with the new JSON Definition
-python ./crcli.py -s PurpleEagle admin_pwd update -d ./currentSettings.json
+python ./crcli.py -s PurpleEagle admin update -t password -d ./currentSettings.json
+```
+
+```
+# Update the SMTP Settings for CR
+# Step 1: get current settings
+python ./crcli.py -s AdminEagle admin show -t smtp > ./smtpSettings.json
+
+# Step 2: Modify the JSON file as needed
+
+# Step 3: Update the settings with the new JSON Definition
+python ./crcli.py -s PurpleEagle admin update -t smtp -d ./smtpSettings.json
 ```
 
 
